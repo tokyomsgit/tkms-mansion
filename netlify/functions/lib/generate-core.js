@@ -98,6 +98,17 @@ function isGarbageText(s) {
   return /郵便番号|ハイフンなし|例）|例\)|メールアドレス|電話番号|入力|確認メール|ログイン|SUUMO|資料請求|-->|<\/?|javascript:/i.test(s);
 }
 
+function isListFragment(s) {
+  if (!s || s.length < 3) return true;
+  s = s.trim();
+  if (/^[・、。．\s\(\)（）\[\]「」\\/]+$/.test(s)) return true;
+  if (/^[・]?[月年日][）)]?$/.test(s)) return true;
+  if (/^[（(][^（(]{0,6}[）)]$/.test(s) && s.length <= 8) return true;
+  if (/^[\d\s・（）()月年日万円㎡m\-−:：,，]+$/.test(s)) return true;
+  var core = s.replace(/[・、。．\s\(\)（）\[\]「」\/\\:：\-−\d年月日万円㎡m2]/g, '');
+  return core.length < 2;
+}
+
 function isValidAddress(s) {
   s = sanitizeText(s);
   if (!s || s.length < 5 || s.length > 60) return false;
@@ -132,7 +143,7 @@ function splitListText(text) {
   var parts = [], seen = {};
   String(text).split(/[\n・\/／、]/).forEach(function(s) {
     s = sanitizeText(s);
-    if (s.length < 2 || s.length > 48 || isGarbageText(s) || seen[s]) return;
+    if (s.length < 2 || s.length > 48 || isGarbageText(s) || isListFragment(s) || seen[s]) return;
     seen[s] = 1;
     parts.push(s);
   });
@@ -175,6 +186,7 @@ function sanitizePropInfo(p) {
   var setubiParts = splitListText(p.setubi);
   if (renoParts.length) p.reno = renoParts.join('\n');
   else if (p.reno && p.reno.length > 50) p.reno = '';
+  else if (p.reno && isListFragment(p.reno)) p.reno = '―';
   if (setubiParts.length) p.setubi = setubiParts.join('\n');
   if (p.neighbors && p.neighbors.length) {
     p.neighbors = p.neighbors.map(function(n) {
