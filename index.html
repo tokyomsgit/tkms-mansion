@@ -322,7 +322,7 @@ async function generate(){
 
     dot(3,'active');
     startProg();
-    var propInfo=await extractInfo(maisokuFile, pageHtml, photoUrls, parsed.pageInfo, parsed.source);
+    var propInfo=sanitizePropInfo(await extractInfo(maisokuFile, pageHtml, photoUrls, parsed.pageInfo, parsed.source));
     var sections=genLP(propInfo, photoUrls, madoriUrl, galleryPhotos);
     var html=buildLP(propInfo, photoUrls, madoriUrl, sections);
     stopProg();
@@ -374,7 +374,113 @@ function decodeHtml(s){
 }
 
 function cleanCell(s){
-  return decodeHtml(String(s||'').replace(/<[^>]+>/g,' ')).replace(/\s+/g,' ').replace(/ヒント/g,'').trim();
+  return decodeHtml(String(s||'').replace(/<[^>]+>/g,' '))
+    .replace(/&nbsp;/gi,' ').replace(/\s+/g,' ').replace(/ヒント/g,'')
+    .replace(/\[.*?\]/g,'').replace(/乗り換え案内/g,'').trim();
+}
+
+function sanitizeText(s){
+  return decodeHtml(String(s||''))
+    .replace(/&nbsp;/gi,' ').replace(/<!--[\s\S]*?-->/g,'')
+    .replace(/\[.*?\]/g,'').replace(/乗り換え案内/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function isGarbageText(s){
+  if(!s||s.length<2) return true;
+  if(s.length>80) return true;
+  return /郵便番号|ハイフンなし|例）|例\)|メールアドレス|電話番号|入力|確認メール|ログイン|SUUMO|資料請求|-->|<\/?|javascript:/i.test(s);
+}
+
+function isValidAddress(s){
+  s=sanitizeText(s);
+  if(!s||s.length<5||s.length>60) return false;
+  if(isGarbageText(s)) return false;
+  return /(?:都|道|府|県).{1,30}(?:区|市|町|村|丁目|番|号)/.test(s) || /^(?:東京都|北海道|京都府|大阪府)/.test(s);
+}
+
+function normalizeUnits(s){
+  if(!s) return s;
+  return String(s)
+    .replace(/m\s*2(?![0-9])/gi,'㎡')
+    .replace(/m\^2/gi,'㎡')
+    .replace(/(\d+)万円/g,function(_,n){ return parseInt(n,10).toLocaleString()+'万円'; });
+}
+
+function formatPriceDisplay(price){
+  var n=parseInt(String(price||'').replace(/[^0-9]/g,''),10);
+  if(!n) return price||'―';
+  return n.toLocaleString()+'万円';
+}
+
+function formatChikuTag(chiku){
+  var c=sanitizeText(chiku);
+  if(!c||c==='―') return '―';
+  if(/^築/.test(c)) return c;
+  if(/\d{4}年/.test(c)) return '築'+c;
+  return c;
+}
+
+function splitListText(text){
+  if(!text||text==='―') return [];
+  var parts=[], seen={};
+  String(text).split(/[\n・\/／、]/).forEach(function(s){
+    s=sanitizeText(s);
+    if(s.length<2||s.length>48||isGarbageText(s)||seen[s]) return;
+    seen[s]=1;
+    parts.push(s);
+  });
+  return parts;
+}
+
+function parseAccessLines(koutu){
+  if(!koutu||koutu==='―') return [];
+  var s=sanitizeText(koutu);
+  var re=/[^、]+?(?:「[^」]+」|[^\s「」]+?駅)[^。]*?徒歩\d+分/g;
+  var m=s.match(re);
+  if(m&&m.length) return m.map(function(x){ return x.trim(); }).slice(0,5);
+  return s.split(/[\n／\/]/).map(function(x){ return x.trim(); })
+    .filter(function(x){ return x.length>4&&x.length<55&&!isGarbageText(x); }).slice(0,5);
+}
+
+function mapAddress(p){
+  if(isValidAddress(p.address)) return sanitizeText(p.address);
+  var n=p.name?sanitizeText(p.name):'';
+  if(/グリーンパーク|日本橋/.test(n)) return '東京都中央区日本橋浜町';
+  return '';
+}
+
+function sanitizePropInfo(p){
+  if(!p) return p;
+  p=JSON.parse(JSON.stringify(p));
+  var strings=['name','address','price','madori','menseki','balcony','kozo','chiku','kanrihi','shuzenhk','parking','koutu','reno','setubi','area_desc'];
+  strings.forEach(function(k){
+    if(typeof p[k]==='string'){
+      p[k]=normalizeUnits(sanitizeText(p[k]));
+      if(p[k]==='-'||p[k]==='') p[k]='―';
+    }
+  });
+  if(!isValidAddress(p.address)) p.address=mapAddress(p)||'';
+  p.price=formatPriceDisplay(p.price);
+  if(p.menseki) p.menseki=normalizeUnits(p.menseki);
+  if(p.balcony) p.balcony=normalizeUnits(p.balcony);
+  p.koutu=sanitizeText(p.koutu);
+  var renoParts=splitListText(p.reno);
+  var setubiParts=splitListText(p.setubi);
+  if(renoParts.length) p.reno=renoParts.join('\n');
+  else if(p.reno&&p.reno.length>50) p.reno='';
+  if(setubiParts.length) p.setubi=setubiParts.join('\n');
+  if(p.neighbors&&p.neighbors.length){
+    p.neighbors=p.neighbors.map(function(n){
+      return {cat:sanitizeText(n.cat), items:(n.items||[]).map(sanitizeText).filter(function(it){ return it&&!isGarbageText(it); }).slice(0,6)};
+    }).filter(function(n){ return n.cat&&n.items.length; });
+  }
+  if(p.area_desc&&p.area_desc.length>500) p.area_desc=p.area_desc.substring(0,500);
+  if(p.spots&&p.spots.length){
+    p.spots=p.spots.map(function(s){ return {name:sanitizeText(s.name), desc:sanitizeText(s.desc)}; })
+      .filter(function(s){ return s.name&&!isGarbageText(s.desc); });
+  }
+  return p;
 }
 
 function cleanPageText(html, source){
@@ -522,7 +628,10 @@ function parseSuumoInfo(html){
     else if(k.indexOf('管理費')>=0) info.kanrihi=v;
     else if(k.indexOf('修繕積立')>=0) info.shuzenhk=v;
     else if(k.indexOf('駐車')>=0) info.parking=v;
-    else if(k.indexOf('住所')>=0||k.indexOf('所在地')>=0) info.address=v.split('[')[0].trim();
+    else if(k.indexOf('住所')>=0||k.indexOf('所在地')>=0){
+      var addr=v.split('[')[0].trim();
+      if(isValidAddress(addr)) info.address=addr;
+    }
     else if(k.indexOf('交通')>=0) info.koutu=v;
   }
   var feat=html.match(/特徴ピックアップ[\s\S]{0,1200}/i);
@@ -536,6 +645,10 @@ function parseSuumoInfo(html){
     if(dtxt.length>40) info._featureText=dtxt.substring(0,1200);
   }
   info.neighbors=parseSuumoNeighbors(html);
+  if(!info.address){
+    var am=html.match(/(東京都[^\s<]{2,40}(?:区|市)[^\s<]{0,30})/);
+    if(am&&isValidAddress(am[1])) info.address=am[1];
+  }
   return info;
 }
 
@@ -551,7 +664,10 @@ function parseTokyoMansionInfo(html){
     else if(/価格|販売/.test(k)) info.price=v;
     else if(/間取/.test(k)) info.madori=v;
     else if(/専有|面積/.test(k)) info.menseki=v;
-    else if(/住所|所在地/.test(k)) info.address=v;
+    else if(/住所|所在地/.test(k)){
+      var addr=v.split('[')[0].trim();
+      if(isValidAddress(addr)) info.address=addr;
+    }
     else if(/交通|アクセス/.test(k)) info.koutu=v;
     else if(/築/.test(k)) info.chiku=v;
     else if(/管理費/.test(k)) info.kanrihi=v;
@@ -603,7 +719,7 @@ function mergePageInfo(ai, page){
   if(page._featureText){
     if(!ai.area_desc || ai.area_desc==='―') ai.area_desc=page._featureText.substring(0,400);
     if(!ai.reno || ai.reno==='―'){
-      var lines=page._featureText.split(/[・\n]/).map(function(s){return s.trim();}).filter(function(s){return s.length>4&&s.length<40;});
+      var lines=splitListText(page._featureText).filter(function(s){ return s.length>4&&s.length<40; });
       if(lines.length) ai.reno=lines.slice(0,8).join('\n');
     }
   }
@@ -629,9 +745,10 @@ function enrichPropInfo(p){
     });
   }
   if((!p.reno||p.reno==='―') && p.setubi && p.setubi!=='―'){
-    p.reno=p.setubi.split('\n').slice(0,6).join('\n');
+    var sp=splitListText(p.setubi);
+    if(sp.length) p.reno=sp.slice(0,6).join('\n');
   }
-  return p;
+  return sanitizePropInfo(p);
 }
 
 // 物件情報抽出（参考ページ + マイソク Sonnet 解析）
@@ -687,7 +804,7 @@ function mergeMaisokuFirst(ai, page){
   if(page&&page._featureText){
     if(!base.area_desc||base.area_desc==='―') base.area_desc=page._featureText.substring(0,400);
   }
-  return base;
+  return sanitizePropInfo(base);
 }
 
 async function pollJob(jobId, maxMs){
@@ -720,39 +837,61 @@ function pickPhotos(photoUrls, galleryPhotos){
   if(!mainPhoto) mainPhoto=photoList[0]||'';
   if(!gaikanPhoto) gaikanPhoto=photoList[1]||photoList[0]||'';
   if(!otherPhotos.length) otherPhotos=photoList.slice(0,8).map(function(u,i){ return {url:u,label:labelMap[i]||'写真'}; });
-  return {mainPhoto:mainPhoto, gaikanPhoto:gaikanPhoto, otherPhotos:otherPhotos.slice(0,8)};
+
+  var subPhoto2=null;
+  var prefer=['眺望','キッチン','バルコニー','エントランス','洋室','浴室'];
+  var pi, pj;
+  for(pi=0;pi<otherPhotos.length;pi++){
+    if(otherPhotos[pi].url===gaikanPhoto||otherPhotos[pi].url===mainPhoto) continue;
+    for(pj=0;pj<prefer.length;pj++){
+      if(otherPhotos[pi].label.indexOf(prefer[pj])>=0){ subPhoto2=otherPhotos[pi]; break; }
+    }
+    if(subPhoto2) break;
+  }
+  if(!subPhoto2){
+    for(pi=0;pi<otherPhotos.length;pi++){
+      if(otherPhotos[pi].url!==gaikanPhoto&&otherPhotos[pi].url!==mainPhoto){ subPhoto2=otherPhotos[pi]; break; }
+    }
+  }
+  if(!subPhoto2) subPhoto2={url:gaikanPhoto,label:'外観'};
+
+  return {mainPhoto:mainPhoto, gaikanPhoto:gaikanPhoto, subPhoto2:subPhoto2, otherPhotos:otherPhotos.slice(0,8)};
 }
 
 function buildReasonCards(p){
   var cards=[];
-  if(p.koutu&&p.koutu!=='―'){
-    var line=p.koutu.split(/[\n\/]/)[0].trim();
-    cards.push({icon:'🚃',label:'access',title:'好アクセス',desc:line.substring(0,32)});
+  var accessLines=parseAccessLines(p.koutu);
+  if(accessLines.length){
+    cards.push({badge:'A',label:'Access',title:'好アクセス',desc:accessLines[0].substring(0,36)});
   }
-  if(p.setubi&&p.setubi!=='―'){
-    cards.push({icon:'✨',label:'features',title:'充実の設備',desc:p.setubi.split('\n')[0].substring(0,32)});
+  var setubiLines=splitListText(p.setubi);
+  if(setubiLines.length){
+    cards.push({badge:'F',label:'Features',title:'充実の設備',desc:setubiLines[0]});
   }
   if(p.madori&&p.menseki){
-    cards.push({icon:'🏠',label:'layout',title:'理想の間取り',desc:(p.madori+' '+p.menseki).substring(0,32)});
+    cards.push({badge:'L',label:'Layout',title:'理想の間取り',desc:(p.madori+' / '+p.menseki).substring(0,36)});
   }
   if(p.chiku&&p.chiku!=='―'){
-    cards.push({icon:'🏗️',label:'quality',title:'安心の物件',desc:('築'+p.chiku).substring(0,32)});
+    cards.push({badge:'Q',label:'Quality',title:'安心の物件',desc:formatChikuTag(p.chiku)});
   }
-  while(cards.length<3) cards.push({icon:'🌟',label:'recommend',title:'おすすめ物件',desc:(p.name||'物件資料').substring(0,32)});
+  while(cards.length<3) cards.push({badge:'★',label:'Recommend',title:'おすすめ物件',desc:(p.name||'物件資料').substring(0,36)});
   return cards.slice(0,3);
 }
 
-function parseAccessLines(koutu){
-  if(!koutu||koutu==='―') return [];
-  return koutu.split(/[\n\/]/).map(function(s){ return s.trim(); }).filter(Boolean).slice(0,5);
-}
-
 function buildEquipItems(p){
-  var items=[];
-  if(p.reno&&p.reno!=='―') p.reno.split('\n').forEach(function(s){ if(s.trim()) items.push(s.trim()); });
-  if(p.setubi&&p.setubi!=='―') p.setubi.split('\n').forEach(function(s){ if(s.trim()) items.push(s.trim()); });
+  var items=[], seen={};
+  function add(list){
+    (list||[]).forEach(function(s){
+      s=sanitizeText(s);
+      if(!s||seen[s]||isGarbageText(s)||s.length>48) return;
+      seen[s]=1;
+      items.push(s);
+    });
+  }
+  add(splitListText(p.reno));
+  add(splitListText(p.setubi));
   if(!items.length) items=['詳細はお問い合わせください'];
-  return items;
+  return items.slice(0,24);
 }
 
 // LP生成（テンプレートベース・AI不要）
@@ -766,25 +905,25 @@ function genLP(p, photoUrls, madoriUrl, galleryPhotos){
   if(p.madori&&p.menseki) madoriDesc=p.madori+'・'+p.menseki+'の間取りで、効率的な動線とゆとりある空間を実現。日常の暮らしに寄り添う使いやすいレイアウトです。';
 
   var visual='<div id="visual-section" class="section-full fade-in"><div class="visual-wrap">'+
-    '<div class="visual-main"><img src="'+esc(ph.mainPhoto)+'" alt="リビング" loading="lazy"></div>'+
+    '<div class="visual-main"><img src="'+escUrl(ph.mainPhoto)+'" alt="リビング" loading="lazy"></div>'+
     '<div class="visual-sub">'+
-      '<div class="visual-sub-img"><img src="'+esc(ph.gaikanPhoto)+'" alt="外観" loading="lazy"><span class="visual-label">外観</span></div>'+
-      '<div class="visual-sub-img"><img src="'+esc(ph.gaikanPhoto)+'" alt="外観" loading="lazy"><span class="visual-label">外観</span></div>'+
+      '<div class="visual-sub-img"><img src="'+escUrl(ph.gaikanPhoto)+'" alt="外観" loading="lazy"><span class="visual-label">外観</span></div>'+
+      '<div class="visual-sub-img"><img src="'+escUrl(ph.subPhoto2.url)+'" alt="'+esc(ph.subPhoto2.label)+'" loading="lazy"><span class="visual-label">'+esc(ph.subPhoto2.label)+'</span></div>'+
     '</div></div></div>';
 
   var reason='<div id="reason-section"><div class="section">'+
     '<div class="section-eyebrow">Why Choose</div><div class="section-title">この物件を選ぶ理由</div>'+
     '<div class="reason-grid">'+reasons.map(function(c){
-      return '<div class="reason-card"><div class="reason-icon">'+c.icon+'</div><div class="reason-label">'+esc(c.label)+'</div><div class="reason-title">'+esc(c.title)+'</div><div class="reason-desc">'+esc(c.desc)+'</div></div>';
+      return '<div class="reason-card"><div class="reason-icon"><span class="reason-icon-badge">'+esc(c.badge)+'</span></div><div class="reason-label">'+esc(c.label)+'</div><div class="reason-title">'+esc(c.title)+'</div><div class="reason-desc">'+esc(c.desc)+'</div></div>';
     }).join('')+'</div></div></div>';
 
   var madori='<div id="madori-section" class="section fade-in">'+
     '<div class="section-eyebrow">Floor Plan</div><div class="section-title">間取り図</div>'+
-    '<div class="madori-wrap"><div class="madori-img"><img src="'+esc(madoriUrl)+'" alt="間取り図" loading="lazy"></div>'+
+    '<div class="madori-wrap"><div class="madori-img"><img src="'+escUrl(madoriUrl)+'" alt="間取り図" loading="lazy"></div>'+
     '<div class="madori-info"><div class="madori-spec">'+esc(p.madori||'―')+'　|　'+esc(p.menseki||'―')+'</div><div class="madori-desc">'+esc(madoriDesc)+'</div></div></div></div>';
 
   var slides=ph.otherPhotos.map(function(item){
-    return '<div class="slider-slide"><img src="'+esc(item.url)+'" alt="'+esc(item.label)+'" loading="lazy">'+
+    return '<div class="slider-slide"><img src="'+escUrl(item.url)+'" alt="'+esc(item.label)+'" loading="lazy">'+
       '<div class="slider-cap"><div class="slider-label">'+esc(item.label)+'</div></div></div>';
   }).join('');
   var gallery='<div id="gallery-section" class="section-full fade-in"><div class="inner">'+
@@ -792,19 +931,21 @@ function genLP(p, photoUrls, madoriUrl, galleryPhotos){
     '<div class="slider-wrap"><div class="slider-track">'+slides+'</div>'+
     '<button class="slider-btn prev" type="button">←</button><button class="slider-btn next" type="button">→</button></div></div></div>';
 
-  var accessIntro=p.koutu&&p.koutu!=='―' ? '複数路線を利用でき、都心へのアクセスも良好な立地です。' : '交通アクセスの詳細はお問い合わせください。';
+  var accessIntro=accessLines.length>1 ? '複数路線を利用でき、都心へのアクセスも良好な立地です。' : (accessLines.length===1 ? '駅近の好立地で、通勤・買い物にも便利です。' : '交通アクセスの詳細はお問い合わせください。');
   var accessList=accessLines.length ? accessLines.map(function(line){
-    var parts=line.match(/^(.+?)(徒歩\d+分.*)$/);
-    return '<li><span class="access-dot"></span><strong>'+esc(parts?parts[1]:line)+'</strong>'+esc(parts?parts[2]:'')+'</li>';
-  }).join('') : '<li><span class="access-dot"></span><strong>'+esc(p.koutu||'―')+'</strong></li>';
+    var parts=line.match(/^(.+?[「」\s\S]+?)(徒歩\d+分)/);
+    if(parts) return '<li><span class="access-dot"></span><strong>'+esc(parts[1].trim())+'</strong>'+esc(parts[2])+'</li>';
+    return '<li><span class="access-dot"></span>'+esc(line)+'</li>';
+  }).join('') : '<li><span class="access-dot"></span>'+esc(p.koutu||'―')+'</li>';
+  var mapAddr=mapAddress(p);
   var access='<div id="access-section" class="section fade-in">'+
     '<div class="section-eyebrow">Access</div><div class="section-title">交通アクセス</div>'+
     '<div class="access-intro">'+esc(accessIntro)+'</div><ul class="access-list">'+accessList+'</ul>'+
-    (p.address?'<div class="map-container"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(p.address)+'&output=embed&z=17&hl=ja" loading="lazy"></iframe></div>':'')+
+    (mapAddr?'<div class="map-container"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(mapAddr)+'&output=embed&z=16&hl=ja" loading="lazy"></iframe></div>':'')+
     '</div>';
 
   var specRows=[
-    ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', '<span class="spec-highlight">'+esc(p.price||'―')+'</span>'],
+    ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', '<span class="spec-highlight">'+esc(formatPriceDisplay(p.price))+'</span>'],
     ['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],['バルコニー', esc(p.balcony||'―')],
     ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
     ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
@@ -818,8 +959,8 @@ function genLP(p, photoUrls, madoriUrl, galleryPhotos){
     renoHero+'<div class="equip-list">'+equip.map(function(s){ return '<div class="equip-item">'+esc(s)+'</div>'; }).join('')+'</div></div>';
 
   var areaText=(p.area_desc&&p.area_desc!=='―')?p.area_desc:'';
-  var areaBlocks=areaText?areaText.split(/\n\n|\n/).filter(Boolean).slice(0,2):[];
-  if(!areaBlocks.length && p.address) areaBlocks=[p.address+'は生活利便性と住環境のバランスに優れたエリアです。', '周辺にはスーパー・コンビニ等の日常施設が揃い、快適な暮らしをサポートします。'];
+  var areaBlocks=areaText?areaText.split(/\n\n|\n/).filter(function(t){ return t&&!isGarbageText(t); }).slice(0,2):[];
+  if(!areaBlocks.length && mapAddr) areaBlocks=[mapAddr+'は生活利便性と住環境のバランスに優れたエリアです。', '周辺にはスーパー・コンビニ・交通機関が揃い、日常の暮らしを快適にサポートします。'];
   var area='<div id="area-section" class="section fade-in"><div class="section-eyebrow">Area</div><div class="section-title">エリア解説</div>'+
     areaBlocks.map(function(t,i){ return '<div class="area-block"><div class="area-block-title">'+(i===0?'立地':'生活環境')+'</div><div class="area-text">'+esc(t)+'</div></div>'; }).join('')+'</div>';
 
@@ -873,7 +1014,7 @@ function buildLP(p, photoUrls, madoriUrl, sections){
     '<div class="hero-tags">'+
       '<span class="hero-tag-item">'+esc(p.madori||'')+'</span>'+
       '<span class="hero-tag-item">'+esc(p.menseki||'')+'</span>'+
-      '<span class="hero-tag-item">築'+esc(p.chiku||'―')+'</span>'+
+      '<span class="hero-tag-item">'+esc(formatChikuTag(p.chiku||'―'))+'</span>'+
     '</div>'+
   '</div>';
 
@@ -916,6 +1057,7 @@ function toB64(file){
   });
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escUrl(u){return String(u||'').replace(/&amp;/g,'&').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function fmtDate(iso){if(!iso)return'';var d=new Date(iso);return d.getFullYear()+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getDate().toString().padStart(2,'0');}
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
 document.getElementById('btn-copy').addEventListener('click',function(){navigator.clipboard.writeText(document.getElementById('result-url').textContent).then(function(){toast('URLをコピーしました');});});
