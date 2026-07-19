@@ -240,14 +240,15 @@ body{background:#fff;font-family:'Noto Serif JP','游明朝',serif;color:var(--t
 </div>
 
 <script>
-var SUPABASE_URL='https://mfqqiitlyfibgyeimnah.supabase.co';
-var SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mcXFpaXRseWZpYmd5ZWltbmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTY5OTUsImV4cCI6MjA5NzQ5Mjk5NX0.YSqeAUhLCI81nu_wJSQK8mVgZTJCafWXjpMZjRIMrvk';
+var SUPABASE_URL='https://bypticegujbxgvcctkju.supabase.co';
+var SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cHRpY2VndWpieGd2Y2N0a2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzA3OTUsImV4cCI6MjA5NzA0Njc5NX0.4fzXRVUYKzkDDmOzEiq3PP0Wk8ZujdD7AJAYivnWgbc';
+var TABLE_PROPERTIES='tkms-mansion-properties';
 
 async function load(){
   var id=new URLSearchParams(location.search).get('id');
   if(!id){showError();return;}
   try{
-    var r=await fetch(SUPABASE_URL+'/rest/v1/properties?id=eq.'+id+'&select=*',{
+    var r=await fetch(SUPABASE_URL+'/rest/v1/'+TABLE_PROPERTIES+'?id=eq.'+id+'&select=*',{
       headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}
     });
     var data=await r.json();

@@ -172,8 +172,10 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
 <div id="toast"></div>
 
 <script>
-var SUPABASE_URL = 'https://mfqqiitlyfibgyeimnah.supabase.co';
-var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mcXFpaXRseWZpYmd5ZWltbmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTY5OTUsImV4cCI6MjA5NzQ5Mjk5NX0.YSqeAUhLCI81nu_wJSQK8mVgZTJCafWXjpMZjRIMrvk';
+var SUPABASE_URL = 'https://bypticegujbxgvcctkju.supabase.co';
+var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cHRpY2VndWpieGd2Y2N0a2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzA3OTUsImV4cCI6MjA5NzA0Njc5NX0.4fzXRVUYKzkDDmOzEiq3PP0Wk8ZujdD7AJAYivnWgbc';
+var TABLE_PROPERTIES = 'tkms-mansion-properties';
+var STORAGE_BUCKET = 'tkms-mansion-images';
 var SITE_URL = 'https://tkms-mansion.netlify.app';
 var ADMIN_PW = 'tkms0303';
 
@@ -206,15 +208,15 @@ async function sbPost(t,d){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t,{method
 async function sbDel(t,id){ await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SBH}); }
 async function uploadImg(file,path){
   try{
-    var r=await fetch(SUPABASE_URL+'/storage/v1/object/property-images/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
+    var r=await fetch(SUPABASE_URL+'/storage/v1/object/'+STORAGE_BUCKET+'/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
     if(!r.ok) return '';
-    return SUPABASE_URL+'/storage/v1/object/public/property-images/'+path;
+    return SUPABASE_URL+'/storage/v1/object/public/'+STORAGE_BUCKET+'/'+path;
   }catch(e){ return ''; }
 }
 
 // 物件一覧
 async function loadProps(){
-  var data=await sbGet('properties','select=id,name,address,created_at');
+  var data=await sbGet(TABLE_PROPERTIES,'select=id,name,address,created_at');
   var grid=document.getElementById('prop-grid');
   if(!data||!data.length){ grid.innerHTML='<div class="empty">まだ物件がありません。「＋ 新規作成」から追加してください。</div>'; return; }
   grid.innerHTML=data.map(function(p){
@@ -222,7 +224,7 @@ async function loadProps(){
   }).join('');
 }
 function copyUrl(id){ navigator.clipboard.writeText(SITE_URL+'/property.html?id='+id).then(function(){ toast('URLをコピーしました'); }); }
-async function delProp(id){ if(!confirm('削除しますか？')) return; await sbDel('properties',id); toast('削除しました'); loadProps(); }
+async function delProp(id){ if(!confirm('削除しますか？')) return; await sbDel(TABLE_PROPERTIES,id); toast('削除しました'); loadProps(); }
 
 // モーダル
 var maisokuFile=null, madoriFile=null;
@@ -329,7 +331,7 @@ async function generate(){
     dot(3,'done');
 
     dot(4,'active');
-    var saved=await sbPost('properties',{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
+    var saved=await sbPost(TABLE_PROPERTIES,{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
     dot(4,'done');
 
     var resultUrl=SITE_URL+'/property.html?id='+saved.id;
