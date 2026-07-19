@@ -13,9 +13,16 @@ exports.handler = async function(event) {
   const url = body.url;
   if (!url) return { statusCode: 400, body: JSON.stringify({ error: 'URL required' }) };
 
-  // tokyomansions.jpのみ許可
-  if (!url.includes('tokyomansions.jp')) {
-    return { statusCode: 403, body: JSON.stringify({ error: '許可されていないURLです' }) };
+  let hostname;
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./, '');
+  } catch (e) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid URL' }) };
+  }
+
+  const ALLOWED = ['tokyomansions.jp', 'suumo.jp'];
+  if (!ALLOWED.some(function(d){ return hostname === d || hostname.endsWith('.' + d); })) {
+    return { statusCode: 403, body: JSON.stringify({ error: '許可されているのは tokyomansions.jp と suumo.jp のみです' }) };
   }
 
   try {
@@ -35,7 +42,7 @@ function fetchPage(url) {
     const lib = url.startsWith('https') ? https : http;
     const req = lib.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PropertyBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml',
         'Accept-Language': 'ja,en;q=0.9'
       }
