@@ -240,6 +240,7 @@ body{background:#fff;font-family:'Noto Serif JP','游明朝',serif;color:var(--t
   <a href="tel:0337897777">📞 お問い合わせ・内見予約：03-3789-7777</a>
 </div>
 
+<script src="js/lp-render.js"></script>
 <script>
 var SUPABASE_URL='https://bypticegujbxgvcctkju.supabase.co';
 var SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cHRpY2VndWpieGd2Y2N0a2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzA3OTUsImV4cCI6MjA5NzA0Njc5NX0.4fzXRVUYKzkDDmOzEiq3PP0Wk8ZujdD7AJAYivnWgbc';
@@ -257,7 +258,15 @@ async function load(){
     var prop=data[0];
     document.title=(prop.name||'物件資料')+' — 東京マンション株式会社';
     document.getElementById('header-title').textContent=prop.name||'物件資料';
-    document.getElementById('content').innerHTML=prop.html_content;
+    var html='';
+    if(prop.property_data&&prop.property_data.info){
+      html=LPRender.renderProperty(prop.property_data);
+    } else if(prop.html_content){
+      html=prop.html_content;
+    } else {
+      showError(); return;
+    }
+    document.getElementById('content').innerHTML=html;
     document.getElementById('loading').style.display='none';
     document.getElementById('content').style.display='block';
     setTimeout(initAll,60);

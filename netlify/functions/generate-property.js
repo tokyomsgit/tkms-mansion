@@ -60,7 +60,7 @@ exports.handler = async function(event) {
   } catch (err) {
     var msg = err.message || String(err);
     if (/tkms-mansion-jobs/i.test(msg)) {
-      msg = 'Supabaseに「tkms-mansion-jobs」テーブルがありません。supabase/migrate-v2.sql を SQL Editor で実行してください。';
+      msg = 'Supabaseのセットアップが未完了です。Dashboard > SQL Editor で supabase/migrate-v2.sql を実行してください。';
     }
     return cors(500, JSON.stringify({ error: msg }));
   }
