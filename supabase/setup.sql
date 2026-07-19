@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS "tkms-mansion-properties" (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT NOT NULL DEFAULT '物件資料',
   address     TEXT DEFAULT '',
-  html_content TEXT NOT NULL DEFAULT '',
+  property_data JSONB,
+  html_content TEXT DEFAULT '',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -31,10 +32,15 @@ CREATE POLICY "tkms-mansion-properties-update"
 CREATE POLICY "tkms-mansion-properties-delete"
   ON "tkms-mansion-properties" FOR DELETE TO anon USING (true);
 
--- マイソク解析ジョブ（Background Function 結果の受け渡し）
+-- マイソク解析ジョブ（Background Function 結果の受け渡し + 生成オーケストレーション）
 CREATE TABLE IF NOT EXISTS "tkms-mansion-jobs" (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   status      TEXT NOT NULL DEFAULT 'pending',
+  job_type    TEXT NOT NULL DEFAULT 'generate',
+  progress    INT NOT NULL DEFAULT 0,
+  message     TEXT DEFAULT '',
+  property_id UUID,
+  input       JSONB,
   result      JSONB,
   error       TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),

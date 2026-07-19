@@ -7,6 +7,12 @@
 [functions."generate"]
   timeout = 60
 
+[functions."generate-property"]
+  timeout = 30
+
+[functions."generate-property-background"]
+  timeout = 900
+
 [functions."read-maisoku-background"]
   timeout = 900
 

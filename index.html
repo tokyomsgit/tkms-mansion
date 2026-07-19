@@ -209,8 +209,13 @@ async function sbGet(t,q){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t+'?'+(q||
 async function sbPost(t,d){
   var r=await fetch(SUPABASE_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(d)});
   var j=await r.json();
-  if(!r.ok) throw new Error((j.message||j.error||j.hint||'DB保存失敗')+' ('+r.status+')');
+  if(!r.ok) throw new Error(formatDbError((j.message||j.error||j.hint||'DB保存失敗')+' ('+r.status+')'));
   return Array.isArray(j)?j[0]:j;
+}
+function formatDbError(msg){
+  if(/tkms-mansion-jobs/i.test(msg))
+    return 'Supabaseに「tkms-mansion-jobs」テーブルがありません。Dashboard > SQL Editor で supabase/add-jobs-table.sql を実行してください。';
+  return msg;
 }
 async function sbDel(t,id){ await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SBH}); }
 async function uploadFile(file,path){
@@ -306,8 +311,7 @@ function stopProg(){
 }
 function dot(n,s){ document.getElementById('d'+n).className='s-dot '+s; }
 
-// 生成
-document.getElementById('btn-gen').addEventListener('click', generate);
+// 生成（API 1本 + ジョブポーリング）
 async function generate(){
   var url=document.getElementById('prop-url').value.trim();
   if(!url){ toast('① 参考ページURLを入力してください'); return; }
@@ -319,54 +323,61 @@ async function generate(){
 
   try {
     dot(1,'active');
-    setProg(5,'参考ページを取得中…');
-    var pageHtml=await fetchPage(url);
-    setProg(15,'参考ページを取得しました');
-    dot(1,'done');
-
-    dot(2,'active');
-    setProg(18,'写真・物件情報を抽出中…');
-    var parsed=parseReferencePage(pageHtml, url);
-    if(!parsed.photos.length) throw new Error('参考ページから写真を取得できませんでした');
-    var galleryPhotos=parsed.photos.filter(function(p){ return !p.isMadori; });
-    var photoUrls=galleryPhotos.map(function(p){ return p.url; });
-
-    var ts=Date.now();
-    var madoriUrl='';
-    if(madoriFile){
-      var ext=madoriFile.name.split('.').pop();
-      madoriUrl=await uploadFile(madoriFile, ts+'-madori.'+ext);
-    } else if(parsed.madoriUrl){
-      madoriUrl=parsed.madoriUrl;
-    } else {
-      throw new Error('間取り図が見つかりません。参考ページに間取りがない場合はアップロードしてください');
+    setProg(5,'ファイルをアップロード中…');
+    var ts=Date.now(), maisokuUrl='', madoriUrl='', maisokuMime='';
+    if(maisokuFile){
+      var ext=(maisokuFile.name.split('.').pop()||'pdf').toLowerCase();
+      maisokuUrl=await uploadFile(maisokuFile, ts+'-maisoku.'+ext);
+      maisokuMime=maisokuFile.type||'application/pdf';
+      if(!maisokuUrl) throw new Error('マイソクのアップロードに失敗しました');
     }
-    if(!madoriUrl) throw new Error('間取り図の保存に失敗しました');
-    setProg(22,'間取り図を準備しました');
-    dot(2,'done');
+    if(madoriFile){
+      var ext2=madoriFile.name.split('.').pop();
+      madoriUrl=await uploadFile(madoriFile, ts+'-madori.'+ext2);
+      if(!madoriUrl) throw new Error('間取り図のアップロードに失敗しました');
+    }
+    setProg(12,'参考ページ・生成準備完了');
+    dot(1,'done'); dot(2,'done');
 
     dot(3,'active');
-    var propInfo=sanitizePropInfo(await extractInfo(maisokuFile, pageHtml, photoUrls, parsed.pageInfo, parsed.source));
-    var sections=genLP(propInfo, photoUrls, madoriUrl, galleryPhotos);
-    var html=buildLP(propInfo, photoUrls, madoriUrl, sections);
+    setProg(15,'生成ジョブを開始中…');
+    var startRes=await fetch('/.netlify/functions/generate-property',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({refUrl:url,maisokuUrl:maisokuUrl,madoriUrl:madoriUrl,maisokuMime:maisokuMime})
+    });
+    var startData=await startRes.json();
+    if(!startRes.ok) throw new Error(formatDbError(startData.error||('生成開始失敗('+startRes.status+')')));
+    var jobId=startData.jobId;
+    if(!jobId) throw new Error('ジョブIDの取得に失敗しました');
+
+    var propertyId=null, deadline=Date.now()+600000;
+    while(Date.now()<deadline){
+      var pollRes=await fetch('/.netlify/functions/generate-property?jobId='+encodeURIComponent(jobId));
+      var job=await pollRes.json();
+      if(!pollRes.ok) throw new Error(formatDbError(job.error||('ステータス取得失敗('+pollRes.status+')')));
+      if(job.progress) setProg(job.progress, job.message||'処理中…');
+      if(job.status==='done'){ propertyId=job.propertyId; break; }
+      if(job.status==='error') throw new Error(job.error||'生成に失敗しました');
+      await new Promise(function(r){ setTimeout(r, 2000); });
+    }
+    if(!propertyId) throw new Error('生成がタイムアウトしました（10分）');
     setProg(92,'LP資料を組み立てました');
     dot(3,'done');
 
     dot(4,'active');
-    setProg(96,'Supabaseに保存中…');
-    var saved=await sbPost(TABLE_PROPERTIES,{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
-    if(!saved||!saved.id) throw new Error('Supabase保存失敗: '+JSON.stringify(saved));
+    setProg(96,'保存完了');
     dot(4,'done');
     stopProg();
 
-    var resultUrl=SITE_URL+'/property.html?id='+saved.id;
+    var resultUrl=SITE_URL+'/property.html?id='+propertyId;
     document.getElementById('result-url').textContent=resultUrl;
     document.getElementById('result').className='result show';
     loadProps();
 
   } catch(err) {
     console.error(err);
-    var msg=err.message||String(err);
+    var msg=formatDbError(err.message||String(err));
     if(msg.indexOf('504')>=0) msg='処理がタイムアウトしました。ページを再読み込みして再度お試しください。';
     toast('エラー: '+msg);
     [1,2,3,4].forEach(function(n){ if(document.getElementById('d'+n).classList.contains('active')) dot(n,'error'); });
