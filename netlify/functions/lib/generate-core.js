@@ -486,16 +486,91 @@ function mergeMaisokuFirst(ai, page) {
   return sanitizePropInfo(base);
 }
 
-function buildPropertyData(info, galleryPhotos, madoriUrl) {
+function buildPropertyData(info, galleryPhotos, madoriUrl, copy) {
   return {
     version: 2,
     info: enrichPropInfo(info),
+    copy: copy || null,
     assets: {
       photoUrls: galleryPhotos.filter(function(p) { return !p.isMadori; }).map(function(p) { return p.url; }).slice(0, 12),
       galleryPhotos: galleryPhotos.filter(function(p) { return !p.isMadori; }).slice(0, 12),
       madoriUrl: madoriUrl
     }
   };
+}
+
+function sanitizeCopy(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  function t(s) { return fixTextCorruption(sanitizeText(String(s || ''))); }
+  var copy = {
+    target_audience: t(raw.target_audience),
+    madori_desc: t(raw.madori_desc),
+    access_intro: t(raw.access_intro),
+    reno_intro: t(raw.reno_intro),
+    area_blocks: [],
+    spots: []
+  };
+  (raw.area_blocks || []).slice(0, 3).forEach(function(b) {
+    var text = t(b.text);
+    var title = t(b.title);
+    if (text.length >= 20 && !isGarbageText(text)) copy.area_blocks.push({ title: title || 'エリア', text: text });
+  });
+  (raw.spots || []).slice(0, 4).forEach(function(s) {
+    var name = t(s.name);
+    var desc = t(s.desc);
+    if (name && desc.length >= 15 && !isGarbageText(desc)) copy.spots.push({ name: name, desc: desc });
+  });
+  (raw.reason_hooks || []).slice(0, 3).forEach(function(r, i) {
+    if (!copy.reason_hooks) copy.reason_hooks = [];
+    var desc = t(r.desc || r);
+    if (desc.length >= 10) copy.reason_hooks.push({ title: t(r.title) || '', desc: desc });
+  });
+  var hasContent = copy.madori_desc || copy.access_intro || copy.area_blocks.length || copy.spots.length;
+  return hasContent ? copy : null;
+}
+
+async function generateMarketingCopyWithClaude(info) {
+  const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+  if (!CLAUDE_API_KEY) return null;
+
+  var snapshot = {
+    name: info.name, address: info.address, price: info.price,
+    madori: info.madori, menseki: info.menseki, balcony: info.balcony,
+    kozo: info.kozo, chiku: info.chiku, kanrihi: info.kanrihi, shuzenhk: info.shuzenhk,
+    koutu: info.koutu, reno: info.reno, setubi: info.setubi,
+    neighbors: (info.neighbors || []).slice(0, 6),
+    spots: (info.spots || []).slice(0, 4)
+  };
+
+  var schema = '{"target_audience":"想定ターゲット（1行）","madori_desc":"間取り訴求文（80-120字）","access_intro":"交通アクセス訴求文（60-100字）","reno_intro":"リノベ訴求文（50-80字・リノベなければ空文字）","area_blocks":[{"title":"立地","text":"100-140字"},{"title":"生活環境","text":"100-140字"}],"spots":[{"name":"スポット名","desc":"60-90字・ライフスタイル訴求"}],"reason_hooks":[{"title":"短い見出し","desc":"40-60字"}]}';
+
+  var prompt = 'あなたは東京マンション株式会社の物件資料ライター。以下の物件データからターゲット層を仮説立てし、高級感のある物件資料向け文案をJSONのみで出力。\n\n'
+    + '【ルール】\n'
+    + '- 間取り・面積・価格帯・エリア・築年・交通からターゲット（例:DINKS/単身者/ファミリー/投資）を推定し、それに響く訴求にする\n'
+    + '- 文体: 丁寧語（です・ます）。誇大広告・絵文字・記号（！？★）禁止\n'
+    + '- 具体的な地名・路線名・数字を自然に織り込む\n'
+    + '- spotsは neighbors/spots の実在施設名をベースに、暮らしのシーンが浮かぶ描写に\n'
+    + '- reason_hooksは3件（好アクセス/間取り/エリア等）\n'
+    + '- 不明な情報は推測せず、一般的な魅力で補う\n\n'
+    + schema + '\n\n【物件データ】\n' + JSON.stringify(snapshot, null, 0);
+
+  try {
+    const claudeRes = await callClaude(CLAUDE_API_KEY, {
+      model: CLAUDE_MODEL,
+      max_tokens: 2200,
+      system: 'JSONのみ出力。説明不要。日本語。',
+      messages: [{ role: 'user', content: prompt }]
+    });
+    const text = (claudeRes.content || [])
+      .filter(function(b) { return b.type === 'text'; })
+      .map(function(b) { return b.text; })
+      .join('');
+    const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '').trim();
+    return sanitizeCopy(JSON.parse(clean));
+  } catch (e) {
+    console.error('Marketing copy generation failed:', e.message);
+    return null;
+  }
 }
 
 function fetchBinary(url) {
@@ -611,5 +686,6 @@ module.exports = {
   sanitizePropInfo,
   defaultPropInfo,
   mergeMaisokuFirst,
-  parseMaisokuWithClaude
+  parseMaisokuWithClaude,
+  generateMarketingCopyWithClaude
 };

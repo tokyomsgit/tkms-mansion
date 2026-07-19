@@ -183,7 +183,7 @@
     return {mainPhoto:mainPhoto, gaikanPhoto:gaikanPhoto, subPhoto2:subPhoto2, otherPhotos:otherPhotos.slice(0,8)};
   }
 
-  function buildReasonCards(p){
+  function buildReasonCards(p, copy){
     var cards=[];
     var accessLines=parseAccessLines(p.koutu);
     if(accessLines.length){
@@ -200,7 +200,16 @@
       cards.push({badge:'Q',label:'Quality',title:'安心の物件',desc:formatChikuTag(p.chiku)});
     }
     while(cards.length<3) cards.push({badge:'★',label:'Recommend',title:'おすすめ物件',desc:(p.name||'物件資料').substring(0,36)});
-    return cards.slice(0,3);
+    cards=cards.slice(0,3);
+    if(copy&&copy.reason_hooks&&copy.reason_hooks.length){
+      cards.forEach(function(c,i){
+        var h=copy.reason_hooks[i];
+        if(!h) return;
+        if(h.title&&h.title.length>=2) c.title=h.title.substring(0,20);
+        if(h.desc&&h.desc.length>=8) c.desc=h.desc.substring(0,48);
+      });
+    }
+    return cards;
   }
 
   function buildEquipItems(p){
@@ -219,13 +228,14 @@
     return items.slice(0,24);
   }
 
-  function buildSections(p, photoUrls, madoriUrl, galleryPhotos){
+  function buildSections(p, photoUrls, madoriUrl, galleryPhotos, copy){
+    copy=copy||{};
     var ph=pickPhotos(photoUrls, galleryPhotos);
-    var reasons=buildReasonCards(p);
+    var reasons=buildReasonCards(p, copy);
     var accessLines=parseAccessLines(p.koutu);
     var equip=buildEquipItems(p);
-    var madoriDesc='';
-    if(p.madori&&p.menseki) madoriDesc=p.madori+'・'+p.menseki+'の間取りで、効率的な動線とゆとりある空間を実現。日常の暮らしに寄り添う使いやすいレイアウトです。';
+    var madoriDesc=copy.madori_desc||'';
+    if(!madoriDesc&&p.madori&&p.menseki) madoriDesc=p.madori+'・'+p.menseki+'の間取りで、効率的な動線とゆとりある空間を実現。日常の暮らしに寄り添う使いやすいレイアウトです。';
 
     var visual='<div id="visual-section" class="section-full fade-in"><div class="visual-wrap">'+
       '<div class="visual-main"><img src="'+escUrl(ph.mainPhoto)+'" alt="リビング" loading="lazy"></div>'+
@@ -254,7 +264,8 @@
       '<div class="slider-wrap"><div class="slider-track">'+slides+'</div>'+
       '<button class="slider-btn prev" type="button">←</button><button class="slider-btn next" type="button">→</button></div></div></div>';
 
-    var accessIntro=accessLines.length>1 ? '複数路線を利用でき、都心へのアクセスも良好な立地です。' : (accessLines.length===1 ? '駅近の好立地で、通勤・買い物にも便利です。' : '交通アクセスの詳細はお問い合わせください。');
+    var accessIntro=copy.access_intro||'';
+    if(!accessIntro) accessIntro=accessLines.length>1 ? '複数路線を利用でき、都心へのアクセスも良好な立地です。' : (accessLines.length===1 ? '駅近の好立地で、通勤・買い物にも便利です。' : '交通アクセスの詳細はお問い合わせください。');
     var accessList=accessLines.length ? accessLines.map(function(line){
       var parts=line.match(/^(.+?[「」\s\S]+?)(徒歩\d+分)/);
       if(parts) return '<li><span class="access-dot"></span><strong>'+esc(parts[1].trim())+'</strong>'+esc(parts[2])+'</li>';
@@ -277,15 +288,31 @@
       '<table class="spec-table">'+specRows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('')+'</table></div>';
 
     var renoHero='';
-    if(p.reno&&p.reno!=='―') renoHero='<div class="reno-hero"><div class="reno-hero-text"><em>'+esc(p.name||'本物件')+'</em>の魅力を最大限に活かした、快適な暮らしを叶える仕様です。</div></div>';
+    if(p.reno&&p.reno!=='―'){
+      var renoText=copy.reno_intro||((p.name||'本物件')+'の魅力を最大限に活かした、快適な暮らしを叶える仕様です。');
+      renoHero='<div class="reno-hero"><div class="reno-hero-text"><em>'+esc(p.name||'本物件')+'</em> — '+esc(renoText)+'</div></div>';
+    }
     var reno='<div id="reno-section" class="section fade-in"><div class="section-eyebrow">Renovation</div><div class="section-title">リノベーション・設備仕様</div>'+
       renoHero+'<div class="equip-list">'+equip.map(function(s){ return '<div class="equip-item">'+esc(s)+'</div>'; }).join('')+'</div></div>';
 
-    var areaText=(p.area_desc&&p.area_desc!=='―')?p.area_desc:'';
-    var areaBlocks=areaText?areaText.split(/\n\n|\n/).filter(function(t){ return t&&!isGarbageText(t); }).slice(0,2):[];
-    if(!areaBlocks.length && mapAddr) areaBlocks=[mapAddr+'は生活利便性と住環境のバランスに優れたエリアです。', '周辺にはスーパー・コンビニ・交通機関が揃い、日常の暮らしを快適にサポートします。'];
-    var area='<div id="area-section" class="section fade-in"><div class="section-eyebrow">Area</div><div class="section-title">エリア解説</div>'+
-      areaBlocks.map(function(t,i){ return '<div class="area-block"><div class="area-block-title">'+(i===0?'立地':'生活環境')+'</div><div class="area-text">'+esc(t)+'</div></div>'; }).join('')+'</div>';
+    var areaBlocks=[];
+    if(copy.area_blocks&&copy.area_blocks.length){
+      areaBlocks=copy.area_blocks;
+    } else {
+      var areaText=(p.area_desc&&p.area_desc!=='―')?p.area_desc:'';
+      if(areaText){
+        areaBlocks=areaText.split(/\n\n|\n/).filter(function(t){ return t&&!isGarbageText(t); }).slice(0,2)
+          .map(function(t,i){ return {title:i===0?'立地':'生活環境', text:t}; });
+      }
+      if(!areaBlocks.length && mapAddr){
+        areaBlocks=[
+          {title:'立地', text:mapAddr+'は生活利便性と住環境のバランスに優れたエリアです。'},
+          {title:'生活環境', text:'周辺にはスーパー・コンビニ・交通機関が揃い、日常の暮らしを快適にサポートします。'}
+        ];
+      }
+    }
+    var area=areaBlocks.length?'<div id="area-section" class="section fade-in"><div class="section-eyebrow">Area</div><div class="section-title">エリア解説</div>'+
+      areaBlocks.map(function(b){ return '<div class="area-block"><div class="area-block-title">'+esc(b.title||'エリア')+'</div><div class="area-text">'+esc(b.text)+'</div></div>'; }).join('')+'</div>':'';
 
     var neighbors=(p.neighbors&&p.neighbors.length)?p.neighbors:[];
     var facility=neighbors.length?'<div id="facility-section" class="section fade-in"><div class="section-eyebrow">Facilities</div><div class="section-title">周辺施設</div><div class="facility-grid">'+
@@ -294,7 +321,7 @@
           (n.items||[]).slice(0,5).map(function(it){ return '<li>'+esc(it)+'</li>'; }).join('')+'</ul></div>';
       }).join('')+'</div></div>':'';
 
-    var spots=(p.spots&&p.spots.length)?p.spots:[];
+    var spots=(copy.spots&&copy.spots.length)?copy.spots:((p.spots&&p.spots.length)?p.spots:[]);
     if(!spots.length && neighbors.length){
       spots=neighbors.slice(0,3).map(function(n){ return {name:n.cat, desc:(n.items&&n.items[0])||''}; });
     }
@@ -381,7 +408,8 @@
     var galleryPhotos=assets.galleryPhotos||[];
     var madoriUrl=assets.madoriUrl||'';
     var info=sanitizePropInfo(JSON.parse(JSON.stringify(p.info||{})));
-    var sections=buildSections(info, photoUrls, madoriUrl, galleryPhotos);
+    var copy=p.copy||null;
+    var sections=buildSections(info, photoUrls, madoriUrl, galleryPhotos, copy);
     return buildLP(info, photoUrls, madoriUrl, sections);
   }
 

@@ -38,8 +38,11 @@ async function runPipeline(jobId, input) {
       info = core.enrichPropInfo(info);
     }
 
+    await progress(78, 'Sonnetがターゲット向け文案を作成中…');
+    const copy = await core.generateMarketingCopyWithClaude(info);
+
     await progress(85, '物件データを組み立て中…');
-    const propertyData = core.buildPropertyData(info, galleryPhotos, madoriUrl);
+    const propertyData = core.buildPropertyData(info, galleryPhotos, madoriUrl, copy);
 
     await progress(96, 'Supabaseに保存中…');
     const saved = await saveProperty({

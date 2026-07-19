@@ -77,12 +77,6 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .visual-sub{display:flex;flex-direction:column;gap:4px}
 .visual-sub-img{flex:1;position:relative;overflow:hidden;background:var(--dark)}
 .visual-label{position:absolute;bottom:12px;left:14px;font-size:10px;color:#fff;letter-spacing:0.14em;background:rgba(22,34,33,0.55);padding:4px 12px;border-radius:20px;backdrop-filter:blur(6px)}
-@media(max-width:640px){
-  .visual-wrap{grid-template-columns:1fr;height:auto;border-radius:12px}
-  .visual-main{aspect-ratio:4/3}
-  .visual-sub{flex-direction:row;height:130px}
-  #visual-section{padding:32px 16px 0}
-}
 
 /* ===== 選ぶ理由 ===== */
 #reason-section{background:var(--dark);margin-top:48px}
@@ -95,7 +89,6 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .reason-label{font-size:10px;color:var(--green);letter-spacing:0.24em;margin-bottom:10px;font-family:'Cormorant Garamond',serif;font-style:italic;text-transform:uppercase}
 .reason-title{font-size:16px;font-weight:600;color:#fff;letter-spacing:0.06em;margin-bottom:10px}
 .reason-desc{font-size:13px;color:rgba(255,255,255,0.58);line-height:1.85}
-@media(max-width:640px){.reason-grid{grid-template-columns:1fr;gap:14px}}
 
 /* ===== 間取り ===== */
 .madori-wrap{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
@@ -118,6 +111,9 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .slider-btn:hover{background:#fff;transform:translateY(-50%) scale(1.06)}
 .slider-btn.prev{left:16px}
 .slider-btn.next{right:16px}
+.slider-dots{display:flex;justify-content:center;gap:8px;margin-top:16px}
+.slider-dot{width:7px;height:7px;border-radius:50%;background:var(--border);border:none;cursor:pointer;padding:0;transition:all 0.25s}
+.slider-dot.active{background:var(--dark);transform:scale(1.35)}
 
 /* ===== 交通 ===== */
 .access-intro{font-size:15px;line-height:1.95;color:#444;margin-bottom:24px;padding:20px 22px;background:var(--light);border-radius:12px;border-left:3px solid var(--green)}
@@ -136,7 +132,6 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .equip-item{font-size:13px;padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .equip-item:nth-child(odd){border-right:1px solid var(--border)}
 .equip-item::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
-@media(max-width:600px){.equip-list{grid-template-columns:1fr}.equip-item:nth-child(odd){border-right:none}}
 
 /* ===== 物件概要 ===== */
 .spec-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
@@ -162,7 +157,6 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .bar-fill{height:100%;border-radius:3px;width:0%;transition:width 1.6s cubic-bezier(0.4,0,0.2,1)}
 .bar-val{font-size:12px;color:var(--gray);width:80px;text-align:right;flex-shrink:0}
 .cost-note{font-size:12px;color:var(--gray);line-height:1.85;padding:16px;background:var(--light);border-radius:10px;margin-top:16px}
-@media(max-width:600px){.cost-grid{grid-template-columns:1fr}}
 
 /* ===== エリア・施設・スポット ===== */
 .area-block{margin-bottom:32px;padding:24px;background:#fff;border-radius:12px;border:1px solid var(--border)}
@@ -173,7 +167,6 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 .facility-list{list-style:none;display:flex;flex-direction:column;gap:8px}
 .facility-list li{font-size:13px;line-height:1.7;color:#555;display:flex;align-items:baseline;gap:8px}
 .facility-list li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
-@media(max-width:600px){.facility-grid{grid-template-columns:1fr}}
 .spot-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:14px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.03)}
 .spot-name{font-size:15px;font-weight:700;margin-bottom:8px;letter-spacing:0.04em;color:var(--dark)}
 .spot-desc{font-size:13px;line-height:1.95;color:#555}
@@ -200,7 +193,115 @@ body{background:#faf9f6;font-family:'Noto Serif JP','游明朝',serif;color:var(
 /* ===== 固定CTA ===== */
 #fixed-cta{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--gold);z-index:200;padding:14px 20px;justify-content:center;box-shadow:0 -4px 24px rgba(0,0,0,0.12)}
 #fixed-cta a{color:var(--dark);text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.06em}
-@media(max-width:640px){#fixed-cta{display:flex}body{padding-bottom:58px}}
+
+/* ===== レスポンシブ ===== */
+html{overflow-x:hidden}
+img,video,iframe{max-width:100%}
+
+/* タブレット */
+@media(max-width:900px){
+  .visual-wrap{grid-template-columns:1fr 1fr;height:380px}
+  .visual-sub{flex-direction:column}
+  .reason-grid{grid-template-columns:repeat(2,1fr)}
+  .reason-grid .reason-card:last-child:nth-child(odd){grid-column:1/-1;max-width:360px;margin:0 auto;width:100%}
+  #reason-section .section{padding:48px 24px}
+  .madori-wrap{gap:24px}
+  .madori-img,.madori-info{min-width:100%;flex:1 1 100%}
+}
+
+/* スマートフォン */
+@media(max-width:640px){
+  body{padding-bottom:58px}
+  #site-header{padding:0 14px;height:50px;gap:8px}
+  .header-company{display:none}
+  .header-title{max-width:42%;font-size:12px}
+  .header-tel{font-size:10px;padding:5px 10px;letter-spacing:0.06em;white-space:nowrap}
+
+  .hero{min-height:360px;background-position:65% center}
+  .hero-inner{padding:48px 18px 40px}
+  .hero-company{margin-bottom:16px;font-size:10px}
+  .hero-room{margin-bottom:24px;font-size:13px;letter-spacing:0.1em}
+  .hero-price-wrap{margin-bottom:24px;padding-top:18px}
+  .hero-tags{gap:6px}
+  .hero-tag-item{padding:5px 12px;font-size:10px}
+
+  .section{padding:40px 18px}
+  .section-title{margin-bottom:24px;font-size:20px}
+  .section-eyebrow{letter-spacing:0.22em;font-size:10px}
+
+  #visual-section{padding:24px 14px 0}
+  .visual-wrap{grid-template-columns:1fr;height:auto;border-radius:12px}
+  .visual-main{aspect-ratio:4/3;height:auto}
+  .visual-sub{flex-direction:row;height:120px}
+  .visual-main:hover img,.visual-sub-img:hover img{transform:none}
+
+  #reason-section{margin-top:32px}
+  #reason-section .section{padding:40px 18px}
+  .reason-grid{grid-template-columns:1fr;gap:12px}
+  .reason-grid .reason-card:last-child:nth-child(odd){max-width:none}
+  .reason-card{padding:28px 18px}
+  .reason-card:hover{transform:none}
+
+  #gallery-section{padding:40px 18px}
+  .slider-wrap{border-radius:12px;aspect-ratio:4/3}
+  .slider-btn{width:38px;height:38px;font-size:16px}
+  .slider-btn.prev{left:8px}
+  .slider-btn.next{right:8px}
+  .slider-cap{padding:16px 18px 14px}
+
+  .madori-spec{font-size:18px}
+  .madori-desc{font-size:13px;line-height:1.85}
+
+  .access-intro{padding:16px 18px;font-size:14px}
+  .access-list li{flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px;font-size:13px}
+  .access-list li strong{min-width:0;font-size:14px}
+  .map-container{aspect-ratio:4/3;border-radius:12px}
+
+  .reno-hero{padding:22px 20px;border-radius:12px}
+  .reno-hero-text{font-size:15px;line-height:1.75}
+  .equip-list{grid-template-columns:1fr}
+  .equip-item:nth-child(odd){border-right:none}
+
+  .spec-table{border:none;background:transparent;box-shadow:none}
+  .spec-table tr{display:block;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.04)}
+  .spec-table td{display:block;width:100%!important;padding:10px 16px;white-space:normal}
+  .spec-table td:first-child{background:var(--light);padding-bottom:6px;font-size:11px;border-bottom:1px solid var(--border)}
+  .spec-table td:last-child{padding-top:8px;padding-bottom:14px}
+  .spec-highlight{font-size:20px}
+
+  .cost-hero{padding:28px 20px;border-radius:12px}
+  .cost-grid{grid-template-columns:1fr}
+  .cost-card{padding:16px}
+  .chart-wrap{padding:18px}
+  .bar-row{flex-wrap:wrap;gap:6px}
+  .bar-label{width:100%;font-size:11px}
+  .bar-val{width:auto;text-align:left;font-size:11px}
+  .bar-track{flex:1 1 100%;order:3}
+
+  .area-block{padding:18px;margin-bottom:16px}
+  .area-text{font-size:13px;line-height:1.85}
+  .facility-grid{grid-template-columns:1fr;gap:20px}
+  .spot-card{padding:18px}
+
+  #cta-section .section{padding:48px 18px}
+  .cta-btn{width:100%;max-width:320px;padding:18px 24px;border-radius:48px}
+  .cta-sub{font-size:13px;margin-bottom:32px}
+
+  .footer{padding:36px 18px}
+  .footer-note{font-size:10px}
+
+  #fixed-cta{display:flex}
+}
+
+/* 小型スマートフォン */
+@media(max-width:380px){
+  .header-title{max-width:38%;font-size:11px}
+  .header-tel{font-size:9px;padding:4px 8px}
+  .hero-name{font-size:24px}
+  .hero-price{font-size:40px}
+  .visual-sub{height:100px}
+  .cta-btn-tel{font-size:26px}
+}
 </style>
 </head>
 <body>
