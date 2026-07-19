@@ -64,11 +64,11 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
 .s-dot.done{background:var(--green)}
 .s-dot.error{background:var(--red)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.prog-wrap{display:none;margin-top:8px}
+.prog-wrap{display:none;margin-top:10px;padding-top:4px;border-top:1px solid var(--border)}
 .prog-wrap.show{display:block}
-.prog-bg{background:var(--border);border-radius:99px;height:4px;overflow:hidden}
-.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));width:0%;transition:width 0.5s ease}
-.prog-lbl{font-size:11px;color:var(--gold-dim);letter-spacing:0.06em;margin-top:5px;text-align:right}
+.prog-bg{background:var(--border);border-radius:99px;height:6px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));width:0%;transition:width 0.4s ease}
+.prog-lbl{font-size:11px;color:var(--gold);letter-spacing:0.06em;margin-top:6px;text-align:right;min-height:16px}
 .modal-actions{display:flex;gap:10px}
 .btn-gen{flex:1;background:var(--gold);border:none;border-radius:8px;padding:13px;font-size:14px;color:#111;font-family:inherit;font-weight:700;cursor:pointer;letter-spacing:0.08em}
 .btn-gen:hover{opacity:0.88}
@@ -278,12 +278,32 @@ document.getElementById('f-madori').addEventListener('change', function(){
   });
 });
 
-// プログレス
-var _pt=null, _pv=0;
-var _msgs=[[10,'マイソクを読み取り中…'],[25,'物件情報を解析中…'],[40,'設備・リノベを整理中…'],[55,'LP前半を生成中…'],[70,'LP後半を生成中…'],[85,'仕上げ中…']];
-function startProg(){ _pv=0; var step=0; document.getElementById('prog-wrap').classList.add('show'); setProg(0,'解析中…'); _pt=setInterval(function(){ if(step<_msgs.length){ var t=_msgs[step][0],l=_msgs[step][1]; if(_pv<t){_pv=Math.min(_pv+1,t);setProg(_pv,l);}else{step++;} }else{_pv=Math.min(_pv+0.2,95);setProg(_pv,'もうすぐ完成…');} },250); }
-function setProg(p,l){ document.getElementById('prog-fill').style.width=p+'%'; document.getElementById('prog-lbl').textContent=l; }
-function stopProg(){ if(_pt){clearInterval(_pt);_pt=null;} document.getElementById('prog-wrap').classList.remove('show'); _pv=0; }
+// プログレス（手動更新 + 待機中はゆっくり進行）
+var _pt=null, _pv=0, _pvTarget=0;
+function startProg(){
+  _pv=0; _pvTarget=0;
+  document.getElementById('prog-wrap').classList.add('show');
+  setProg(0,'準備中…');
+  _pt=setInterval(function(){
+    if(_pv<_pvTarget) _pv=Math.min(_pv+2, _pvTarget);
+    else if(_pv<95) _pv=Math.min(_pv+0.12, 95);
+    document.getElementById('prog-fill').style.width=_pv+'%';
+  }, 200);
+}
+function setProg(p,l){
+  _pvTarget=Math.max(_pvTarget, p);
+  if(p>_pv) _pv=p;
+  document.getElementById('prog-fill').style.width=_pv+'%';
+  if(l) document.getElementById('prog-lbl').textContent=l;
+}
+function stopProg(){
+  if(_pt){ clearInterval(_pt); _pt=null; }
+  setProg(100,'生成完了！');
+  setTimeout(function(){
+    document.getElementById('prog-wrap').classList.remove('show');
+    _pv=0; _pvTarget=0;
+  }, 800);
+}
 function dot(n,s){ document.getElementById('d'+n).className='s-dot '+s; }
 
 // 生成
@@ -295,13 +315,17 @@ async function generate(){
   document.getElementById('btn-gen').disabled=true;
   document.getElementById('status-wrap').style.display='flex';
   document.getElementById('result').className='result';
+  startProg();
 
   try {
     dot(1,'active');
+    setProg(5,'参考ページを取得中…');
     var pageHtml=await fetchPage(url);
+    setProg(15,'参考ページを取得しました');
     dot(1,'done');
 
     dot(2,'active');
+    setProg(18,'写真・物件情報を抽出中…');
     var parsed=parseReferencePage(pageHtml, url);
     if(!parsed.photos.length) throw new Error('参考ページから写真を取得できませんでした');
     var galleryPhotos=parsed.photos.filter(function(p){ return !p.isMadori; });
@@ -318,20 +342,22 @@ async function generate(){
       throw new Error('間取り図が見つかりません。参考ページに間取りがない場合はアップロードしてください');
     }
     if(!madoriUrl) throw new Error('間取り図の保存に失敗しました');
+    setProg(22,'間取り図を準備しました');
     dot(2,'done');
 
     dot(3,'active');
-    startProg();
     var propInfo=sanitizePropInfo(await extractInfo(maisokuFile, pageHtml, photoUrls, parsed.pageInfo, parsed.source));
     var sections=genLP(propInfo, photoUrls, madoriUrl, galleryPhotos);
     var html=buildLP(propInfo, photoUrls, madoriUrl, sections);
-    stopProg();
+    setProg(92,'LP資料を組み立てました');
     dot(3,'done');
 
     dot(4,'active');
+    setProg(96,'Supabaseに保存中…');
     var saved=await sbPost(TABLE_PROPERTIES,{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
     if(!saved||!saved.id) throw new Error('Supabase保存失敗: '+JSON.stringify(saved));
     dot(4,'done');
+    stopProg();
 
     var resultUrl=SITE_URL+'/property.html?id='+saved.id;
     document.getElementById('result-url').textContent=resultUrl;
@@ -756,17 +782,17 @@ async function extractInfo(maisokuFile, pageHtml, photoUrls, pageInfo, source){
   var base=enrichPropInfo(defaultPropInfo(pageInfo));
 
   if(!maisokuFile){
-    setProg(12,'参考ページの情報を整理中…');
+    setProg(35,'参考ページの情報を整理中…');
     return base;
   }
 
-  setProg(10,'マイソクをアップロード中…');
+  setProg(28,'マイソクをアップロード中…');
   var ts=Date.now();
   var ext=(maisokuFile.name.split('.').pop()||'pdf').toLowerCase();
   var maisokuUrl=await uploadFile(maisokuFile, ts+'-maisoku.'+ext);
   if(!maisokuUrl) throw new Error('マイソクのアップロードに失敗しました');
 
-  setProg(15,'解析ジョブを開始中…');
+  setProg(32,'解析ジョブを開始中…');
   var job=await sbPost(TABLE_JOBS,{status:'pending'});
 
   var bgRes=await fetch('/.netlify/functions/read-maisoku-background',{
@@ -785,7 +811,7 @@ async function extractInfo(maisokuFile, pageHtml, photoUrls, pageInfo, source){
     throw new Error(be.error||('解析開始失敗('+bgRes.status+')'));
   }
 
-  setProg(20,'Sonnetがマイソクを読み取り中…（最大3分）');
+  setProg(38,'Sonnetがマイソクを読み取り中…（最大3分）');
   var aiResult=await pollJob(job.id, 180000);
   return enrichPropInfo(mergeMaisokuFirst(aiResult, pageInfo||{}));
 }
@@ -816,7 +842,7 @@ async function pollJob(jobId, maxMs){
       if(row.status==='done'&&row.result) return row.result;
       if(row.status==='error') throw new Error(row.error||'マイソク解析に失敗しました');
     }
-    var pct=20+Math.min(55, Math.floor((Date.now()-start)/maxMs*55));
+    var pct=38+Math.min(48, Math.floor((Date.now()-start)/maxMs*48));
     setProg(pct,'Sonnetがマイソクを読み取り中…');
     await new Promise(function(r){ setTimeout(r, 2000); });
   }
@@ -896,7 +922,7 @@ function buildEquipItems(p){
 
 // LP生成（テンプレートベース・AI不要）
 function genLP(p, photoUrls, madoriUrl, galleryPhotos){
-  setProg(25,'LPを組み立て中…');
+  setProg(86,'LPを組み立て中…');
   var ph=pickPhotos(photoUrls, galleryPhotos);
   var reasons=buildReasonCards(p);
   var accessLines=parseAccessLines(p.koutu);
@@ -983,7 +1009,7 @@ function genLP(p, photoUrls, madoriUrl, galleryPhotos){
     '<a class="cta-btn" href="tel:0337897777"><span class="cta-btn-label">お電話でお問い合わせ</span><span class="cta-btn-tel">03-3789-7777</span><span class="cta-btn-sub">受付時間 10:00〜18:00</span></a>'+
     '<div class="cta-note">お気軽にお電話ください</div></div></div>';
 
-  setProg(90,'仕上げ中…');
+  setProg(90,'LPセクションを仕上げ中…');
   return visual+reason+madori+gallery+access+spec+reno+area+facility+spot+cta;
 }
 
