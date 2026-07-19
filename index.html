@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理画面 — 東京マンション株式会社</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f0f0f;--surface:#181818;--surface2:#222;--border:#2a2a2a;--gold:#c8b89a;--gold-dim:#7a6e5e;--text:#e8e6e0;--text-dim:#888;--green:#4caf7d;--red:#e07070}
+body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:var(--text);min-height:100vh}
+#pw-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:24px}
+.pw-logo{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--gold-dim);letter-spacing:0.25em;margin-bottom:10px}
+.pw-name{font-size:22px;font-weight:600;letter-spacing:0.1em;margin-bottom:6px}
+.pw-sub{font-size:12px;color:var(--text-dim);letter-spacing:0.1em;margin-bottom:40px}
+.pw-box{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px}
+.pw-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;font-size:15px;color:var(--text);font-family:inherit;outline:none}
+.pw-input:focus{border-color:var(--gold-dim)}
+.pw-btn{background:var(--gold);border:none;border-radius:8px;padding:14px;font-size:15px;color:#111;font-family:inherit;font-weight:700;cursor:pointer}
+.pw-btn:hover{opacity:0.88}
+.pw-err{font-size:13px;color:var(--red);text-align:center;min-height:18px}
+#app{display:none;flex-direction:column;min-height:100vh}
+#topbar{background:#111;border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-jp{font-size:14px;font-weight:600;letter-spacing:0.08em}
+.topbar-right{display:flex;gap:10px}
+.btn-new{background:var(--gold);border:none;border-radius:6px;padding:8px 18px;font-size:13px;color:#111;font-family:inherit;font-weight:700;cursor:pointer}
+.btn-new:hover{opacity:0.88}
+.btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:12px;color:var(--text-dim);font-family:inherit;cursor:pointer}
+.btn-logout:hover{border-color:var(--text-dim);color:var(--text)}
+#main{flex:1;padding:28px 24px}
+.sec-label{font-size:11px;color:var(--gold-dim);letter-spacing:0.2em;margin-bottom:18px;font-style:italic}
+#prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.prop-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.prop-card:hover{border-color:var(--gold-dim)}
+.prop-name{font-size:15px;font-weight:600;letter-spacing:0.05em}
+.prop-meta{font-size:11px;color:var(--text-dim);display:flex;flex-direction:column;gap:3px}
+.prop-actions{display:flex;gap:8px;margin-top:4px}
+.btn-url{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--text-dim);font-family:inherit;cursor:pointer}
+.btn-url:hover{border-color:var(--gold-dim);color:var(--gold)}
+.btn-del{background:none;border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--text-dim);font-family:inherit;cursor:pointer}
+.btn-del:hover{border-color:var(--red);color:var(--red)}
+.empty{color:var(--text-dim);font-size:14px;padding:40px 0;text-align:center;grid-column:1/-1}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+#overlay.open{display:flex}
+#modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;padding:28px;margin:auto;display:flex;flex-direction:column;gap:16px}
+.modal-title{font-size:17px;font-weight:600;letter-spacing:0.06em}
+.modal-sub{font-size:12px;color:var(--text-dim);margin-top:-10px}
+.f-label{font-size:12px;color:var(--text-dim);letter-spacing:0.08em;margin-bottom:6px;display:block}
+.f-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:11px 14px;font-size:14px;color:var(--text);font-family:inherit;outline:none}
+.f-input:focus{border-color:var(--gold-dim)}
+.f-hint{font-size:11px;color:var(--text-dim);margin-top:5px}
+.dz{border:2px dashed var(--border);border-radius:10px;padding:22px;text-align:center;cursor:pointer;position:relative;transition:border-color 0.2s}
+.dz:hover,.dz.over{border-color:var(--gold-dim);background:rgba(200,184,154,0.04)}
+.dz input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:22px;margin-bottom:8px}
+.dz-text{font-size:13px;color:var(--text-dim)}
+.dz-text strong{color:var(--gold);display:block;font-size:11px;margin-top:3px}
+.badge{display:none;background:var(--surface2);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--green);margin-top:8px}
+.badge.show{display:block}
+.status-wrap{display:none;flex-direction:column;gap:8px;background:var(--bg);border-radius:8px;padding:14px}
+.s-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-dim)}
+.s-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background 0.3s}
+.s-dot.active{background:var(--gold);animation:pulse 1s infinite}
+.s-dot.done{background:var(--green)}
+.s-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.prog-wrap{display:none;margin-top:8px}
+.prog-wrap.show{display:block}
+.prog-bg{background:var(--border);border-radius:99px;height:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-dim),var(--gold));width:0%;transition:width 0.5s ease}
+.prog-lbl{font-size:11px;color:var(--gold-dim);letter-spacing:0.06em;margin-top:5px;text-align:right}
+.modal-actions{display:flex;gap:10px}
+.btn-gen{flex:1;background:var(--gold);border:none;border-radius:8px;padding:13px;font-size:14px;color:#111;font-family:inherit;font-weight:700;cursor:pointer;letter-spacing:0.08em}
+.btn-gen:hover{opacity:0.88}
+.btn-gen:disabled{opacity:0.4;cursor:default}
+.btn-cancel{background:none;border:1px solid var(--border);border-radius:8px;padding:13px 18px;font-size:13px;color:var(--text-dim);font-family:inherit;cursor:pointer}
+.btn-cancel:hover{border-color:var(--text-dim);color:var(--text)}
+.result{display:none;background:var(--bg);border:1px solid var(--green);border-radius:8px;padding:14px;flex-direction:column;gap:10px}
+.result.show{display:flex}
+.result-title{font-size:13px;color:var(--green);letter-spacing:0.06em}
+.result-url{font-size:12px;color:var(--text-dim);word-break:break-all;background:var(--surface2);padding:8px 10px;border-radius:5px;font-family:monospace}
+.btn-copy{background:var(--green);border:none;border-radius:6px;padding:8px 16px;font-size:12px;color:#fff;font-family:inherit;font-weight:700;cursor:pointer}
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:#222;border:1px solid var(--border);border-radius:8px;padding:11px 22px;font-size:13px;color:var(--text);opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:600px){#topbar{padding:0 16px}#main{padding:20px 16px}#modal{padding:20px 16px}#prop-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="pw-screen">
+  <div class="pw-logo">Tokyo Mansion Co., Ltd.</div>
+  <div class="pw-name">東京マンション株式会社</div>
+  <div class="pw-sub">物件資料管理システム</div>
+  <div class="pw-box">
+    <input class="pw-input" type="password" id="pw-input" placeholder="パスワードを入力">
+    <button class="pw-btn" id="pw-btn">ログイン</button>
+    <div class="pw-err" id="pw-err"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="topbar">
+    <div class="topbar-jp">東京マンション株式会社</div>
+    <div class="topbar-right">
+      <button class="btn-new" id="btn-new">＋ 新規作成</button>
+      <button class="btn-logout" id="btn-logout">ログアウト</button>
+    </div>
+  </div>
+  <div id="main">
+    <div class="sec-label">Property List — 物件一覧</div>
+    <div id="prop-grid"><div class="empty">読み込み中…</div></div>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="modal">
+    <div class="modal-title">新規物件資料を作成</div>
+    <div class="modal-sub">3点セットで高品質なLP資料を自動生成します</div>
+
+    <div>
+      <label class="f-label">① 物件ページURL <span style="color:var(--red)">*必須</span></label>
+      <input class="f-input" type="url" id="prop-url" placeholder="https://tokyomansions.jp/contents/detail/XXXXXXXX">
+      <div class="f-hint">御社HPの物件詳細ページURL（写真を自動で全件取得）</div>
+    </div>
+
+    <div>
+      <label class="f-label">② マイソク <span style="color:var(--red)">*必須</span></label>
+      <div class="dz" id="dz-m">
+        <input type="file" id="f-maisoku" accept=".pdf,image/*">
+        <div class="dz-icon">📄</div>
+        <div class="dz-text">クリックまたはドラッグ＆ドロップ<strong>PDF / JPG / PNG</strong></div>
+      </div>
+      <div class="badge" id="badge-m"></div>
+    </div>
+
+    <div>
+      <label class="f-label">③ 間取り図 <span style="color:var(--red)">*必須</span></label>
+      <div class="dz" id="dz-f">
+        <input type="file" id="f-madori" accept="image/*">
+        <div class="dz-icon">📐</div>
+        <div class="dz-text">クリックまたはドラッグ＆ドロップ<strong>JPG / PNG</strong></div>
+      </div>
+      <div class="badge" id="badge-f"></div>
+    </div>
+
+    <div class="status-wrap" id="status-wrap">
+      <div class="s-row"><div class="s-dot" id="d1"></div><span id="l1">ページと画像を取得中…</span></div>
+      <div class="s-row"><div class="s-dot" id="d2"></div><span id="l2">写真URLを抽出中…</span></div>
+      <div class="s-row"><div class="s-dot" id="d3"></div><span id="l3">AIが資料を生成中…</span></div>
+      <div class="s-row"><div class="s-dot" id="d4"></div><span id="l4">Supabaseに保存中…</span></div>
+      <div class="prog-wrap" id="prog-wrap">
+        <div class="prog-bg"><div class="prog-fill" id="prog-fill"></div></div>
+        <div class="prog-lbl" id="prog-lbl"></div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel">キャンセル</button>
+      <button class="btn-gen" id="btn-gen">✦ AI生成を開始</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="result-title">✓ 生成完了！顧客に送るURLをコピーしてください</div>
+      <div class="result-url" id="result-url"></div>
+      <button class="btn-copy" id="btn-copy">URLをコピー</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var SUPABASE_URL = 'https://mfqqiitlyfibgyeimnah.supabase.co';
+var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mcXFpaXRseWZpYmd5ZWltbmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MTY5OTUsImV4cCI6MjA5NzQ5Mjk5NX0.YSqeAUhLCI81nu_wJSQK8mVgZTJCafWXjpMZjRIMrvk';
+var SITE_URL = 'https://tkms-mansion.netlify.app';
+var ADMIN_PW = 'tkms0303';
+
+// 認証
+document.getElementById('pw-btn').addEventListener('click', login);
+document.getElementById('pw-input').addEventListener('keydown', function(e){ if(e.key==='Enter') login(); });
+function login(){
+  var v = document.getElementById('pw-input').value;
+  if(v === ADMIN_PW){
+    sessionStorage.setItem('auth','1');
+    document.getElementById('pw-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    loadProps();
+  } else {
+    document.getElementById('pw-err').textContent='パスワードが違います';
+    document.getElementById('pw-input').value='';
+  }
+}
+document.getElementById('btn-logout').addEventListener('click', function(){ sessionStorage.removeItem('auth'); location.reload(); });
+if(sessionStorage.getItem('auth')==='1'){
+  document.getElementById('pw-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  loadProps();
+}
+
+// Supabase
+var SBH = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':'application/json','Prefer':'return=representation'};
+async function sbGet(t,q){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t+'?'+(q||'')+'&order=created_at.desc',{headers:SBH}); return r.json(); }
+async function sbPost(t,d){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(d)}); var j=await r.json(); return Array.isArray(j)?j[0]:j; }
+async function sbDel(t,id){ await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SBH}); }
+async function uploadImg(file,path){
+  try{
+    var r=await fetch(SUPABASE_URL+'/storage/v1/object/property-images/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
+    if(!r.ok) return '';
+    return SUPABASE_URL+'/storage/v1/object/public/property-images/'+path;
+  }catch(e){ return ''; }
+}
+
+// 物件一覧
+async function loadProps(){
+  var data=await sbGet('properties','select=id,name,address,created_at');
+  var grid=document.getElementById('prop-grid');
+  if(!data||!data.length){ grid.innerHTML='<div class="empty">まだ物件がありません。「＋ 新規作成」から追加してください。</div>'; return; }
+  grid.innerHTML=data.map(function(p){
+    return '<div class="prop-card"><div class="prop-name">'+esc(p.name||'無題')+'</div><div class="prop-meta"><span>'+esc(p.address||'―')+'</span><span>'+fmtDate(p.created_at)+'</span></div><div class="prop-actions"><button class="btn-url" onclick="copyUrl(\''+p.id+'\')">URLをコピー</button><button class="btn-del" onclick="delProp(\''+p.id+'\')">削除</button></div></div>';
+  }).join('');
+}
+function copyUrl(id){ navigator.clipboard.writeText(SITE_URL+'/property.html?id='+id).then(function(){ toast('URLをコピーしました'); }); }
+async function delProp(id){ if(!confirm('削除しますか？')) return; await sbDel('properties',id); toast('削除しました'); loadProps(); }
+
+// モーダル
+var maisokuFile=null, madoriFile=null;
+document.getElementById('btn-new').addEventListener('click', openModal);
+document.getElementById('btn-cancel').addEventListener('click', closeModal);
+document.getElementById('overlay').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+function openModal(){ resetModal(); document.getElementById('overlay').classList.add('open'); }
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); }
+function resetModal(){
+  maisokuFile=null; madoriFile=null;
+  document.getElementById('prop-url').value='';
+  document.getElementById('f-maisoku').value='';
+  document.getElementById('f-madori').value='';
+  document.getElementById('badge-m').className='badge';
+  document.getElementById('badge-f').className='badge';
+  document.getElementById('status-wrap').style.display='none';
+  document.getElementById('result').className='result';
+  document.getElementById('btn-gen').disabled=false;
+  [1,2,3,4].forEach(function(n){ document.getElementById('d'+n).className='s-dot'; });
+  stopProg();
+}
+
+document.getElementById('f-maisoku').addEventListener('change', function(){
+  if(!this.files[0]) return;
+  maisokuFile=this.files[0];
+  document.getElementById('badge-m').textContent='✓ '+maisokuFile.name;
+  document.getElementById('badge-m').className='badge show';
+});
+document.getElementById('f-madori').addEventListener('change', function(){
+  if(!this.files[0]) return;
+  madoriFile=this.files[0];
+  document.getElementById('badge-f').textContent='✓ '+madoriFile.name;
+  document.getElementById('badge-f').className='badge show';
+});
+['m','f'].forEach(function(key){
+  var dz=document.getElementById('dz-'+key);
+  dz.addEventListener('dragover',function(e){ e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave',function(){ dz.classList.remove('over'); });
+  dz.addEventListener('drop',function(e){
+    e.preventDefault(); dz.classList.remove('over');
+    var f=e.dataTransfer.files[0]; if(!f) return;
+    if(key==='m'){ maisokuFile=f; document.getElementById('badge-m').textContent='✓ '+f.name; document.getElementById('badge-m').className='badge show'; }
+    else { madoriFile=f; document.getElementById('badge-f').textContent='✓ '+f.name; document.getElementById('badge-f').className='badge show'; }
+  });
+});
+
+// プログレス
+var _pt=null, _pv=0;
+var _msgs=[[10,'マイソクを読み取り中…'],[25,'物件情報を解析中…'],[40,'設備・リノベを整理中…'],[55,'LP前半を生成中…'],[70,'LP後半を生成中…'],[85,'仕上げ中…']];
+function startProg(){ _pv=0; var step=0; document.getElementById('prog-wrap').classList.add('show'); setProg(0,'解析中…'); _pt=setInterval(function(){ if(step<_msgs.length){ var t=_msgs[step][0],l=_msgs[step][1]; if(_pv<t){_pv=Math.min(_pv+1,t);setProg(_pv,l);}else{step++;} }else{_pv=Math.min(_pv+0.2,95);setProg(_pv,'もうすぐ完成…');} },250); }
+function setProg(p,l){ document.getElementById('prog-fill').style.width=p+'%'; document.getElementById('prog-lbl').textContent=l; }
+function stopProg(){ if(_pt){clearInterval(_pt);_pt=null;} document.getElementById('prog-wrap').classList.remove('show'); _pv=0; }
+function dot(n,s){ document.getElementById('d'+n).className='s-dot '+s; }
+
+// 生成
+document.getElementById('btn-gen').addEventListener('click', generate);
+async function generate(){
+  var url=document.getElementById('prop-url').value.trim();
+  if(!url){ toast('① URLを入力してください'); return; }
+  if(!maisokuFile){ toast('② マイソクをアップロードしてください'); return; }
+  if(!madoriFile){ toast('③ 間取り図をアップロードしてください'); return; }
+
+  document.getElementById('btn-gen').disabled=true;
+  document.getElementById('status-wrap').style.display='flex';
+  document.getElementById('result').className='result';
+
+  try {
+    // STEP1: 並列取得
+    dot(1,'active');
+    var results=await Promise.all([fetchPage(url), toB64(maisokuFile), toB64(madoriFile)]);
+    var pageHtml=results[0], mb64=results[1], fb64=results[2];
+    var mtype=maisokuFile.type||'image/jpeg', ftype=madoriFile.type||'image/jpeg';
+    dot(1,'done');
+
+    // STEP2: 写真抽出＋図面アップ
+    dot(2,'active');
+    var photoUrls=extractPhotoUrls(pageHtml);
+    var ts=Date.now();
+    var ext=madoriFile.name.split('.').pop();
+    var madoriUrl=await uploadImg(madoriFile, ts+'-madori.'+ext);
+    dot(2,'done');
+
+    // STEP3: AI生成
+    dot(3,'active');
+    startProg();
+    var propInfo=await extractInfo(mb64, mtype, fb64, ftype, pageHtml, photoUrls);
+    var sections=await genLP(propInfo, photoUrls.slice(0,8), madoriUrl);
+    var html=buildLP(propInfo, photoUrls.slice(0,8), madoriUrl, sections);
+    stopProg();
+    dot(3,'done');
+
+    // STEP4: 保存
+    dot(4,'active');
+    var saved=await sbPost('properties',{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
+    dot(4,'done');
+
+    var resultUrl=SITE_URL+'/property.html?id='+saved.id;
+    document.getElementById('result-url').textContent=resultUrl;
+    document.getElementById('result').className='result show';
+    loadProps();
+
+  } catch(err) {
+    console.error(err);
+    toast('エラー: '+err.message);
+    [1,2,3,4].forEach(function(n){ if(document.getElementById('d'+n).classList.contains('active')) dot(n,'error'); });
+    document.getElementById('btn-gen').disabled=false;
+    stopProg();
+  }
+}
+
+// ページ取得
+async function fetchPage(url){
+  var r=await fetch('/.netlify/functions/fetch-url',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+  if(!r.ok) throw new Error('ページ取得失敗('+r.status+')');
+  var d=await r.json();
+  return d.html||'';
+}
+
+// 写真URL抽出
+function extractPhotoUrls(html){
+  var urls=[], seen={};
+  var re=/https?:\/\/[^\s"'<>]+?\.(jpg|jpeg|png|webp)/gi, m;
+  while((m=re.exec(html))!==null){
+    var u=m[0];
+    if(seen[u]) continue; seen[u]=1;
+    if(u.includes('neibour')||u.includes('logo')||u.includes('icon')||u.includes('btn')||u.includes('banner')||u.includes('images_satis')||u.includes('ttl')||u.includes('top/')||u.includes('.gif')) continue;
+    urls.push(u);
+  }
+  return urls;
+}
+
+// Claude API
+async function callClaude(payload){
+  var r=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!r.ok){ var e=await r.json().catch(function(){return{};}); throw new Error(e.error||'HTTP '+r.status); }
+  var d=await r.json();
+  return d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+}
+
+// 物件情報抽出
+async function extractInfo(mb64, mtype, fb64, ftype, pageHtml, photoUrls){
+  var msgs=[];
+  if(mtype.startsWith('image/')) msgs.push({type:'image',source:{type:'base64',media_type:mtype,data:mb64}});
+  else msgs.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:mb64}});
+  if(ftype&&ftype.startsWith('image/')) msgs.push({type:'image',source:{type:'base64',media_type:ftype,data:fb64}});
+
+  var photoHint=photoUrls.slice(0,8).map(function(u,i){return (i+1)+': '+u;}).join(', ');
+  var pageSnip=pageHtml.substring(0,4000).replace(/\s+/g,' ');
+
+  var schema='{"name":"物件名","address":"住所","price":"販売価格","madori":"間取り","menseki":"専有面積","balcony":"バルコニー","kozo":"構造・階数","chiku":"築年月","kanrihi":"管理費","shuzenhk":"修繕積立金","parking":"駐車場","koutu":"交通アクセス詳細","reno":"リノベ内容（施工項目を改行区切りで全項目。例：全クロス新規張替\\nフローリング新規張替\\nシステムキッチン新規交換）","setubi":"設備仕様（リノベ以外の主要設備のみ短く列挙。改行区切り。例：オートロック\\n宅配BOX\\nTVモニターホン）","area_desc":"エリア解説2段落","spots":[{"name":"","desc":""}],"neighbors":[{"cat":"","items":[""]}]}';
+
+  var txt='マイソクを読み取りJSONのみ出力。帯部分（手数料・免責・宅建番号）は無視。記号禁止。\n'+schema+'\n\nHP参考:'+pageSnip+'\n写真:'+photoHint;
+  msgs.push({type:'text',text:txt});
+
+  var res=await callClaude({system:'JSONのみ出力。説明不要。記号禁止。',max_tokens:3000,messages:[{role:'user',content:msgs}]});
+  var clean=res.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
+  try{
+    var obj=JSON.parse(clean);
+    function strip(v){
+      if(typeof v==='string') return v.replace(/[◆◇■□▲△▼▽★☆♦\uFFFD]/g,'').trim();
+      if(Array.isArray(v)) return v.map(function(x){ if(x&&typeof x==='object'){Object.keys(x).forEach(function(k){x[k]=strip(x[k]);}); return x;} return strip(x);});
+      return v;
+    }
+    Object.keys(obj).forEach(function(k){obj[k]=strip(obj[k]);});
+    return obj;
+  }catch(e){
+    return {name:'物件資料',address:'',price:'―',madori:'―',menseki:'―',balcony:'―',kozo:'―',chiku:'―',kanrihi:'―',shuzenhk:'―',parking:'―',koutu:'―',reno:'―',setubi:'―',area_desc:'―',spots:[],neighbors:[]};
+  }
+}
+
+// LP生成（2回に分割）
+async function genLP(p, photoUrls, madoriUrl){
+  var sys='LP用HTMLのdivのみ出力。CSSクラス適用済み。コードブロック不要。記号◆■禁止。';
+  function cl(s){return s.replace(/^```html\n?/i,'').replace(/\n?```$/,'').replace(/[◆◇■□▲△▼▽★☆♦\uFFFD]/g,'').trim();}
+
+  // 写真ラベル自動判別
+  setProg(18,'写真を自動判別中…');
+  var photoList=photoUrls.slice(0,12);
+  var labelMap={};
+  try{
+    var labelRes=await callClaude({system:'JSONのみ出力。',max_tokens:600,messages:[{role:'user',content:
+      '不動産写真URLのラベルを推定。選択肢:外観,エントランス,リビング,LDK,キッチン,洋室,和室,浴室,洗面台,トイレ,バルコニー,眺望,収納,その他\n出力:[{"idx":0,"label":"外観"},...]\n\n'+
+      photoList.map(function(u,i){return i+':'+u;}).join('\n')
+    }]});
+    var labeled=JSON.parse(labelRes.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim());
+    labeled.forEach(function(l){labelMap[l.idx]=l.label;});
+  }catch(e){}
+
+  var mainPhoto='',gaikanPhoto='',otherPhotos=[];
+  photoList.forEach(function(u,i){
+    var lbl=labelMap[i]||'その他';
+    if((lbl==='外観')&&!gaikanPhoto) gaikanPhoto=u;
+    else if((lbl==='リビング'||lbl==='LDK')&&!mainPhoto) mainPhoto=u;
+    else otherPhotos.push({url:u,label:lbl});
+  });
+  if(!mainPhoto) mainPhoto=photoList[0]||'';
+  if(!gaikanPhoto) gaikanPhoto=photoList[1]||photoList[0]||'';
+
+  // 第1回：メインビジュアル＋キャッチコピー＋間取り
+  setProg(32,'メインビジュアル・間取りを生成中…');
+  var r1=await callClaude({system:sys,max_tokens:3000,messages:[{role:'user',content:
+    '物件:'+p.name+' 間取:'+p.madori+'|'+p.menseki+' リノベ:'+(p.reno||'')+'\n'+
+    'メイン写真:'+mainPhoto+' 外観写真:'+gaikanPhoto+'\n\n'+
+    '【1】<div id="visual-section" class="section-full fade-in">\n'+
+    'visual-wrap(2fr 1fr grid)>visual-main(>img[src='+mainPhoto+'])+visual-sub(>visual-sub-img×2それぞれ>img[src='+gaikanPhoto+']で外観)\n\n'+
+    '【2】<div id="reason-section"><div class="section">\n'+
+    'section-eyebrow="Why Choose" section-title="この物件を選ぶ理由"（白文字・dark背景）\n'+
+    'reason-grid>reason-card×3: この物件の最大の魅力3点をそれぞれreason-icon(絵文字)+reason-label(英語小文字)+reason-title(日本語)+reason-desc(30文字)で。リノベ・立地・設備など。</div></div>\n\n'+
+    '【3】<div id="madori-section" class="section fade-in">\n'+
+    'section-eyebrow="Floor Plan" section-title="間取り図"\n'+
+    'madori-wrap>madori-img(img src="'+madoriUrl+'")+madori-info(madori-spec='+p.madori+'|'+p.menseki+' / madori-desc:この間取りで実現できる暮らし80文字)'
+  }]});
+
+  // 第2回：ギャラリー＋アクセス
+  setProg(50,'ギャラリー・アクセスを生成中…');
+  var r2=await callClaude({system:sys,max_tokens:3000,messages:[{role:'user',content:
+    '住所:'+p.address+' アクセス:'+p.koutu+'\n'+
+    '写真（ラベル:URL）:\n'+otherPhotos.slice(0,8).map(function(x){return x.label+':'+x.url;}).join('\n')+'\n\n'+
+    '【4】<div id="gallery-section" class="section-full fade-in"><div class="inner">\n'+
+    'section-eyebrow="Gallery" section-title="物件写真"\n'+
+    'slider-wrap>slider-track>slider-slide×'+Math.min(otherPhotos.length,8)+'枚(img[src]+slider-cap>slider-label) / slider-btn.prev(←) / slider-btn.next(→)</div></div>\n\n'+
+    '【5】<div id="access-section" class="section fade-in">\n'+
+    'section-eyebrow="Access" section-title="交通アクセス"\n'+
+    'access-intro(交通利便性を表す1文)\n'+
+    'access-list>li×各路線(span.access-dot+strong[路線名・駅名]+徒歩分数)\n'+
+    'map-container>iframe src="https://maps.google.com/maps?q='+encodeURIComponent(p.address)+'&output=embed&z=17&hl=ja"'
+  }]});
+
+  // 第3回：物件概要＋リノベ・設備
+  setProg(68,'物件概要・設備を生成中…');
+  var r3=await callClaude({system:sys,max_tokens:3000,messages:[{role:'user',content:
+    '所在地:'+p.address+' 物件名:'+p.name+' 価格:'+p.price+' 間取:'+p.madori+' 面積:'+p.menseki+' バルコニー:'+(p.balcony||'―')+' 構造:'+(p.kozo||'―')+' 築:'+(p.chiku||'―')+' 管理費:'+p.kanrihi+' 修繕:'+p.shuzenhk+' 駐車:'+(p.parking||'―')+'\n'+
+    'リノベ施工:'+( p.reno||'')+'\n設備:'+( p.setubi||'')+'\n\n'+
+    '【6】<div id="spec-section" class="section fade-in">\n'+
+    'section-eyebrow="Overview" section-title="物件概要"\n'+
+    'spec-table: 全項目tr>td×2。価格のtd2はspan.spec-highlight。不明は―\n\n'+
+    '【7】<div id="reno-section" class="section fade-in">\n'+
+    'section-eyebrow="Renovation" section-title="リノベーション・設備仕様"\n'+
+    'reno-hero>reno-hero-text: キャッチコピー1文（emタグで強調語を1つ）\n'+
+    'equip-list(2列grid): 施工項目と設備を全て<div class="equip-item">テキスト</div>。1改行=1div。他テキスト禁止。'
+  }]});
+
+  // 第4回：エリア＋施設＋スポット＋CTA
+  setProg(84,'エリア・CTAを生成中…');
+  var r4=await callClaude({system:sys,max_tokens:3000,messages:[{role:'user',content:
+    'エリア:'+p.area_desc+'\n施設:'+JSON.stringify(p.neighbors)+'\nスポット:'+JSON.stringify(p.spots)+'\n\n'+
+    '【8】<div id="area-section" class="section fade-in">: section-eyebrow="Area" section-title="エリア解説" / area-block×2(area-block-title+area-text)\n'+
+    '【9】<div id="facility-section" class="section fade-in">: section-eyebrow="Facilities" section-title="周辺施設" / facility-grid(facility-cat+facility-list li)\n'+
+    '【10】<div id="spot-section" class="section fade-in">: section-eyebrow="Highlights" section-title="注目スポット" / spot-card×3(spot-name+spot-desc)\n'+
+    '【11】<div id="cta-section"><div class="section">\n'+
+    'cta-eyebrow="Contact" / cta-title="内見のご予約・お問い合わせ" / cta-sub(内見を促す一文) / \n'+
+    '<a class="cta-btn" href="tel:0337897777"><span class="cta-btn-label">お電話でお問い合わせ</span><span class="cta-btn-tel">03-3789-7777</span><span class="cta-btn-sub">受付時間 10:00〜18:00</span></a>\n'+
+    '<div class="cta-note">お気軽にお電話ください</div></div></div>'
+  }]});
+
+  return cl(r1)+'\n'+cl(r2)+'\n'+cl(r3)+'\n'+cl(r4);
+}
+
+
+// LP組み立て
+function buildLP(p, photoUrls, madoriUrl, sections){
+  var price=parseInt((p.price||'0').replace(/[^0-9]/g,''))*10000;
+  var rate=0.0093/12, n=600;
+  var monthly=price>0?Math.round(price*rate/(1-Math.pow(1+rate,-n))):0;
+  var kanri=parseInt((p.kanrihi||'0').replace(/[^0-9]/g,''));
+  var shuz=parseInt((p.shuzenhk||'0').replace(/[^0-9]/g,''));
+  var total=monthly+kanri+shuz;
+  var totalPay=monthly*n;
+  var interest=totalPay-price;
+  var prinPct=totalPay>0?Math.round(price/totalPay*100):0;
+  var intPct=totalPay>0?Math.round(interest/totalPay*100):0;
+  var priceMan=Math.round(price/10000);
+  var priceDisplay=priceMan>0?priceMan.toLocaleString():(p.price||'―');
+
+  var hero='<div class="hero fade-in">'+
+    '<div class="hero-eyebrow">Property Document — 東京マンション株式会社</div>'+
+    '<div class="hero-name">'+esc(p.name||'')+'</div>'+
+    '<div class="hero-room">'+esc(p.madori||'')+'　|　'+esc(p.menseki||'')+'</div>'+
+    '<div class="hero-price-wrap">'+
+      '<div class="hero-price-label">販売価格（税込）</div>'+
+      '<div class="hero-price"><span data-cu="'+priceMan+'" data-sf="万円">'+priceDisplay+'</span><span class="hero-price-suffix">万円</span></div>'+
+    '</div>'+
+    '<div class="hero-tags">'+
+      '<span class="hero-tag-item">'+esc(p.madori||'')+'</span>'+
+      '<span class="hero-tag-item">'+esc(p.menseki||'')+'</span>'+
+      '<span class="hero-tag-item">築'+esc(p.chiku||'―')+'</span>'+
+    '</div>'+
+  '</div>';
+
+  var cost='<div id="cost-section" class="section fade-in">'+
+    '<div class="section-eyebrow">Simulation</div>'+
+    '<div class="section-title">費用シミュレーション</div>'+
+    '<div class="cost-hero">'+
+      '<div class="cost-hero-label">月額合計（目安）</div>'+
+      '<div class="cost-hero-value"><span data-cu="'+total+'" data-sf="円">'+total.toLocaleString()+'円</span></div>'+
+    '</div>'+
+    '<div class="cost-grid">'+
+      '<div class="cost-card"><div class="cost-card-label">住宅ローン返済</div><div class="cost-card-value"><span data-cu="'+monthly+'" data-sf="円">'+monthly.toLocaleString()+'円</span></div></div>'+
+      '<div class="cost-card"><div class="cost-card-label">管理費＋修繕積立金</div><div class="cost-card-value"><span data-cu="'+(kanri+shuz)+'" data-sf="円">'+(kanri+shuz).toLocaleString()+'円</span></div></div>'+
+    '</div>'+
+    '<div class="chart-wrap">'+
+      '<div class="chart-title">50年間の総支払額シミュレーション（金利0.93%・元利均等）</div>'+
+      '<div class="bar-row"><div class="bar-label">元金</div><div class="bar-track"><div class="bar-fill" style="background:var(--dark)" data-w="'+prinPct+'"></div></div><div class="bar-val">'+priceMan.toLocaleString()+'万円</div></div>'+
+      '<div class="bar-row"><div class="bar-label">利息</div><div class="bar-track"><div class="bar-fill" style="background:var(--green)" data-w="'+intPct+'"></div></div><div class="bar-val">'+Math.round(interest/10000).toLocaleString()+'万円</div></div>'+
+    '</div>'+
+    '<div class="cost-note">※フルローン・金利0.93%・50年・元利均等返済での試算です。実際の借入条件・金融機関によって異なります。</div>'+
+  '</div>';
+
+  var footer='<footer class="footer">'+
+    '<div class="footer-company">東京マンション株式会社</div>'+
+    '<div class="footer-sub">Tokyo Mansion Co., Ltd.</div>'+
+    '<div class="footer-note">本資料に記載の情報はマイソクに基づく概算であり、実際の内容は重要事項説明書にてご確認ください。管理費・修繕積立金等は変更となる場合がございます。</div>'+
+  '</footer>';
+
+  return hero+sections+cost+footer;
+}
+
+
+// ユーティリティ
+function toB64(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(){res(r.result.split(',')[1]);};
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(iso){if(!iso)return'';var d=new Date(iso);return d.getFullYear()+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getDate().toString().padStart(2,'0');}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2500);}
+document.getElementById('btn-copy').addEventListener('click',function(){navigator.clipboard.writeText(document.getElementById('result-url').textContent).then(function(){toast('URLをコピーしました');});});
+</script>
+</body>
+</html>
