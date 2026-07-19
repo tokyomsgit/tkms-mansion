@@ -2,14 +2,39 @@
   'use strict';
 
   function decodeHtml(s){
-    return String(s||'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'").replace(/&quot;/g,'"');
+    return String(s||'')
+      .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#39;/g,"'").replace(/&quot;/g,'"')
+      .replace(/&#(\d+);/g,function(_,n){ return String.fromCharCode(parseInt(n,10)); })
+      .replace(/&#x([0-9a-f]+);/gi,function(_,h){ return String.fromCharCode(parseInt(h,16)); });
+  }
+
+  function fixTextCorruption(s){
+    if(!s) return s;
+    return String(s)
+      .replace(/\uFFFD/g,'')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')
+      .replace(/グ[\uFFFD�]{1,3}ーン/g,'グリーン')
+      .replace(/��+/g,'');
+  }
+
+  function cleanPropertyName(name, info){
+    name=fixTextCorruption(sanitizeText(name));
+    if(!name) return name;
+    var floor=name.match(/\s+(\d+)\s*階\s*$/);
+    if(floor){
+      name=name.replace(/\s+\d+\s*階\s*$/,'').trim();
+      if(info&&(!info.kozo||info.kozo==='―')) info.kozo=floor[1]+'階';
+    }
+    name=name.replace(/\s+\d+(?:\.\d+)?\s*万円.*$/,'').trim();
+    name=name.replace(/\s*[（(]\s*[\d.]+\s*万円.*$/,'').trim();
+    return name;
   }
 
   function sanitizeText(s){
-    return decodeHtml(String(s||''))
+    return fixTextCorruption(decodeHtml(String(s||''))
       .replace(/&nbsp;/gi,' ').replace(/<!--[\s\S]*?-->/g,'')
       .replace(/\[.*?\]/g,'').replace(/乗り換え案内/g,'')
-      .replace(/\s+/g,' ').trim();
+      .replace(/\s+/g,' ').trim());
   }
 
   function isGarbageText(s){
@@ -106,6 +131,7 @@
       p.spots=p.spots.map(function(s){ return {name:sanitizeText(s.name), desc:sanitizeText(s.desc)}; })
         .filter(function(s){ return s.name&&!isGarbageText(s.desc); });
     }
+    if(p.name) p.name=cleanPropertyName(p.name, p);
     return p;
   }
 
@@ -284,10 +310,15 @@
     var priceMan=Math.round(price/10000);
     var priceDisplay=priceMan>0?priceMan.toLocaleString():(p.price||'―');
 
-    var hero='<div class="hero fade-in">'+
-      '<div class="hero-eyebrow">Property Document — 東京マンション株式会社</div>'+
+    var heroPhoto=photoUrls&&photoUrls[0]?escUrl(photoUrls[0]):'';
+    var heroBg=heroPhoto?' style="background-image:linear-gradient(135deg,rgba(22,34,33,0.92) 0%,rgba(28,43,42,0.72) 45%,rgba(36,54,53,0.55) 100%),url('+heroPhoto+')"':'';
+
+    var hero='<div class="hero fade-in"'+heroBg+'>'+
+      '<div class="hero-inner">'+
+      '<div class="hero-eyebrow">Property Document</div>'+
+      '<div class="hero-company">東京マンション株式会社</div>'+
       '<div class="hero-name">'+esc(p.name||'')+'</div>'+
-      '<div class="hero-room">'+esc(p.madori||'')+'　|　'+esc(p.menseki||'')+'</div>'+
+      '<div class="hero-room">'+esc(p.madori||'')+'<span class="hero-sep">|</span>'+esc(p.menseki||'')+'</div>'+
       '<div class="hero-price-wrap">'+
         '<div class="hero-price-label">販売価格（税込）</div>'+
         '<div class="hero-price"><span data-cu="'+priceMan+'" data-sf="万円">'+priceDisplay+'</span><span class="hero-price-suffix">万円</span></div>'+
@@ -297,7 +328,7 @@
         '<span class="hero-tag-item">'+esc(p.menseki||'')+'</span>'+
         '<span class="hero-tag-item">'+esc(formatChikuTag(p.chiku||'―'))+'</span>'+
       '</div>'+
-    '</div>';
+      '</div></div>';
 
     var cost='<div id="cost-section" class="section fade-in">'+
       '<div class="section-eyebrow">Simulation</div>'+
@@ -336,13 +367,14 @@
     var photoUrls=assets.photoUrls||[];
     var galleryPhotos=assets.galleryPhotos||[];
     var madoriUrl=assets.madoriUrl||'';
-    var info=p.info||{};
+    var info=sanitizePropInfo(JSON.parse(JSON.stringify(p.info||{})));
     var sections=buildSections(info, photoUrls, madoriUrl, galleryPhotos);
     return buildLP(info, photoUrls, madoriUrl, sections);
   }
 
   global.LPRender = {
     version: 2,
-    renderProperty: renderProperty
+    renderProperty: renderProperty,
+    cleanDisplayName: function(s){ return cleanPropertyName(s, {}) || fixTextCorruption(s) || s; }
   };
 })(typeof window !== 'undefined' ? window : this);

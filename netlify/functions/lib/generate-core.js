@@ -32,9 +32,9 @@ function fetchPage(url) {
         fetchPage(res.headers.location).then(resolve).catch(reject);
         return;
       }
-      let data = '';
-      res.on('data', function(chunk) { data += chunk; });
-      res.on('end', function() { resolve(data); });
+      const chunks = [];
+      res.on('data', function(chunk) { chunks.push(chunk); });
+      res.on('end', function() { resolve(Buffer.concat(chunks).toString('utf8')); });
     });
     req.on('error', reject);
     req.setTimeout(15000, function() { req.destroy(); reject(new Error('Timeout')); });
@@ -51,7 +51,32 @@ function detectPageSource(url) {
 }
 
 function decodeHtml(s) {
-  return String(s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  return String(s || '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, function(_, n) { return String.fromCharCode(parseInt(n, 10)); })
+    .replace(/&#x([0-9a-f]+);/gi, function(_, h) { return String.fromCharCode(parseInt(h, 16)); });
+}
+
+function fixTextCorruption(s) {
+  if (!s) return s;
+  return String(s)
+    .replace(/\uFFFD/g, '')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/グ[\uFFFD�]{1,3}ーン/g, 'グリーン')
+    .replace(/��+/g, '');
+}
+
+function cleanPropertyName(name, info) {
+  name = fixTextCorruption(sanitizeText(name));
+  if (!name) return name;
+  var floor = name.match(/\s+(\d+)\s*階\s*$/);
+  if (floor) {
+    name = name.replace(/\s+\d+\s*階\s*$/, '').trim();
+    if (info && (!info.kozo || info.kozo === '―')) info.kozo = floor[1] + '階';
+  }
+  name = name.replace(/\s+\d+(?:\.\d+)?\s*万円.*$/, '').trim();
+  name = name.replace(/\s*[（(]\s*[\d.]+\s*万円.*$/, '').trim();
+  return name;
 }
 
 function cleanCell(s) {
@@ -61,10 +86,10 @@ function cleanCell(s) {
 }
 
 function sanitizeText(s) {
-  return decodeHtml(String(s || ''))
+  return fixTextCorruption(decodeHtml(String(s || ''))
     .replace(/&nbsp;/gi, ' ').replace(/<!--[\s\S]*?-->/g, '')
     .replace(/\[.*?\]/g, '').replace(/乗り換え案内/g, '')
-    .replace(/\s+/g, ' ').trim();
+    .replace(/\s+/g, ' ').trim());
 }
 
 function isGarbageText(s) {
@@ -161,6 +186,7 @@ function sanitizePropInfo(p) {
     p.spots = p.spots.map(function(s) { return { name: sanitizeText(s.name), desc: sanitizeText(s.desc) }; })
       .filter(function(s) { return s.name && !isGarbageText(s.desc); });
   }
+  if (p.name) p.name = cleanPropertyName(p.name, p);
   return p;
 }
 
