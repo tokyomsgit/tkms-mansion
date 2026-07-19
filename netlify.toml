@@ -5,7 +5,10 @@
   node_bundler = "esbuild"
 
 [functions."generate"]
-  timeout = 300
+  timeout = 60
+
+[functions."read-maisoku-background"]
+  timeout = 900
 
 [[headers]]
   for = "/*"

@@ -31,7 +31,31 @@ CREATE POLICY "tkms-mansion-properties-update"
 CREATE POLICY "tkms-mansion-properties-delete"
   ON "tkms-mansion-properties" FOR DELETE TO anon USING (true);
 
--- 画像ストレージバケット
+-- マイソク解析ジョブ（Background Function 結果の受け渡し）
+CREATE TABLE IF NOT EXISTS "tkms-mansion-jobs" (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  status      TEXT NOT NULL DEFAULT 'pending',
+  result      JSONB,
+  error       TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE "tkms-mansion-jobs" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tkms-mansion-jobs-select" ON "tkms-mansion-jobs";
+DROP POLICY IF EXISTS "tkms-mansion-jobs-insert" ON "tkms-mansion-jobs";
+DROP POLICY IF EXISTS "tkms-mansion-jobs-update" ON "tkms-mansion-jobs";
+
+CREATE POLICY "tkms-mansion-jobs-select"
+  ON "tkms-mansion-jobs" FOR SELECT TO anon USING (true);
+
+CREATE POLICY "tkms-mansion-jobs-insert"
+  ON "tkms-mansion-jobs" FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "tkms-mansion-jobs-update"
+  ON "tkms-mansion-jobs" FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('tkms-mansion-images', 'tkms-mansion-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;

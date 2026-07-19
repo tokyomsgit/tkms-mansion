@@ -124,14 +124,14 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
     </div>
 
     <div>
-      <label class="f-label">② マイソク <span style="color:var(--text-dim)">（任意）</span></label>
+      <label class="f-label">② マイソク <span style="color:var(--gold)">（推奨）</span></label>
       <div class="dz" id="dz-m">
         <input type="file" id="f-maisoku" accept=".pdf,image/*">
         <div class="dz-icon">📄</div>
         <div class="dz-text">クリックまたはドラッグ＆ドロップ<strong>PDF / JPG / PNG</strong></div>
       </div>
       <div class="badge" id="badge-m"></div>
-      <div class="f-hint">未アップロードの場合、参考ページの情報をAIが整理します</div>
+      <div class="f-hint">価格・管理費・リノベ内容など正確な数値はマイソクから Sonnet が読み取ります</div>
     </div>
 
     <div>
@@ -148,7 +148,7 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
     <div class="status-wrap" id="status-wrap">
       <div class="s-row"><div class="s-dot" id="d1"></div><span id="l1">参考ページを取得中…</span></div>
       <div class="s-row"><div class="s-dot" id="d2"></div><span id="l2">写真・物件情報を抽出中…</span></div>
-      <div class="s-row"><div class="s-dot" id="d3"></div><span id="l3">LP資料を生成中…</span></div>
+      <div class="s-row"><div class="s-dot" id="d3"></div><span id="l3">LP資料を生成中…（マイソクはSonnet解析）</span></div>
       <div class="s-row"><div class="s-dot" id="d4"></div><span id="l4">Supabaseに保存中…</span></div>
       <div class="prog-wrap" id="prog-wrap">
         <div class="prog-bg"><div class="prog-fill" id="prog-fill"></div></div>
@@ -175,7 +175,9 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
 var SUPABASE_URL = 'https://bypticegujbxgvcctkju.supabase.co';
 var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cHRpY2VndWpieGd2Y2N0a2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzA3OTUsImV4cCI6MjA5NzA0Njc5NX0.4fzXRVUYKzkDDmOzEiq3PP0Wk8ZujdD7AJAYivnWgbc';
 var TABLE_PROPERTIES = 'tkms-mansion-properties';
+var TABLE_JOBS = 'tkms-mansion-jobs';
 var STORAGE_BUCKET = 'tkms-mansion-images';
+var CLAUDE_MODEL = 'claude-sonnet-4-6';
 var SITE_URL = 'https://tkms-mansion.netlify.app';
 var ADMIN_PW = 'tkms0303';
 
@@ -204,11 +206,16 @@ if(sessionStorage.getItem('auth')==='1'){
 // Supabase
 var SBH = {'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':'application/json','Prefer':'return=representation'};
 async function sbGet(t,q){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t+'?'+(q||'')+'&order=created_at.desc',{headers:SBH}); return r.json(); }
-async function sbPost(t,d){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(d)}); var j=await r.json(); return Array.isArray(j)?j[0]:j; }
+async function sbPost(t,d){
+  var r=await fetch(SUPABASE_URL+'/rest/v1/'+t,{method:'POST',headers:SBH,body:JSON.stringify(d)});
+  var j=await r.json();
+  if(!r.ok) throw new Error((j.message||j.error||j.hint||'DB保存失敗')+' ('+r.status+')');
+  return Array.isArray(j)?j[0]:j;
+}
 async function sbDel(t,id){ await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SBH}); }
-async function uploadImg(file,path){
+async function uploadFile(file,path){
   try{
-    var r=await fetch(SUPABASE_URL+'/storage/v1/object/'+STORAGE_BUCKET+'/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'image/jpeg','x-upsert':'true'},body:file});
+    var r=await fetch(SUPABASE_URL+'/storage/v1/object/'+STORAGE_BUCKET+'/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});
     if(!r.ok) return '';
     return SUPABASE_URL+'/storage/v1/object/public/'+STORAGE_BUCKET+'/'+path;
   }catch(e){ return ''; }
@@ -304,7 +311,7 @@ async function generate(){
     var madoriUrl='';
     if(madoriFile){
       var ext=madoriFile.name.split('.').pop();
-      madoriUrl=await uploadImg(madoriFile, ts+'-madori.'+ext);
+      madoriUrl=await uploadFile(madoriFile, ts+'-madori.'+ext);
     } else if(parsed.madoriUrl){
       madoriUrl=parsed.madoriUrl;
     } else {
@@ -315,16 +322,7 @@ async function generate(){
 
     dot(3,'active');
     startProg();
-    var mb64=null, fb64=null, mtype='', ftype='';
-    if(maisokuFile){
-      mb64=await toB64(maisokuFile);
-      mtype=maisokuFile.type||'image/jpeg';
-    }
-    if(madoriFile){
-      fb64=await toB64(madoriFile);
-      ftype=madoriFile.type||'image/jpeg';
-    }
-    var propInfo=await extractInfo(mb64, mtype, fb64, ftype, pageHtml, photoUrls, parsed.pageInfo, parsed.source, parsed);
+    var propInfo=await extractInfo(maisokuFile, pageHtml, photoUrls, parsed.pageInfo, parsed.source);
     var sections=genLP(propInfo, photoUrls, madoriUrl, galleryPhotos);
     var html=buildLP(propInfo, photoUrls, madoriUrl, sections);
     stopProg();
@@ -332,6 +330,7 @@ async function generate(){
 
     dot(4,'active');
     var saved=await sbPost(TABLE_PROPERTIES,{name:propInfo.name||'物件資料',address:propInfo.address||'',html_content:html});
+    if(!saved||!saved.id) throw new Error('Supabase保存失敗: '+JSON.stringify(saved));
     dot(4,'done');
 
     var resultUrl=SITE_URL+'/property.html?id='+saved.id;
@@ -341,7 +340,9 @@ async function generate(){
 
   } catch(err) {
     console.error(err);
-    toast('エラー: '+err.message);
+    var msg=err.message||String(err);
+    if(msg.indexOf('504')>=0) msg='処理がタイムアウトしました。ページを再読み込みして再度お試しください。';
+    toast('エラー: '+msg);
     [1,2,3,4].forEach(function(n){ if(document.getElementById('d'+n).classList.contains('active')) dot(n,'error'); });
     document.getElementById('btn-gen').disabled=false;
     stopProg();
@@ -496,6 +497,17 @@ function parseSuumoInfo(html){
     if(pm) info.price=pm[1]+'万円';
     if(mm) info.madori=mm[1];
   }
+  if(!info.price){
+    var pm2=html.match(/>(\d+(?:\.\d+)?)\s*万円</);
+    if(pm2) info.price=pm2[1]+'万円';
+  }
+  if(!info.name){
+    var t2=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if(t2){
+      var tn=cleanCell(t2[1]).replace(/^【SUUMO】/,'').replace(/中古マンション.*/,'').trim();
+      if(tn) info.name=tn;
+    }
+  }
   var re=/<th[^>]*>([\s\S]*?)<\/th>\s*<td[^>]*>([\s\S]*?)<\/td>/gi, m;
   while((m=re.exec(html))!==null){
     var k=cleanCell(m[1]), v=cleanCell(m[2]);
@@ -599,25 +611,7 @@ function mergePageInfo(ai, page){
   return ai;
 }
 
-// Claude API（リトライ付き）
-async function callClaude(payload, retries){
-  retries=retries||0;
-  var r=await fetch('/.netlify/functions/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  if(!r.ok){
-    var e=await r.json().catch(function(){return{};});
-    var msg=e.error||('HTTP '+r.status);
-    if(retries<2 && (r.status===504||r.status===502||r.status===503)){
-      setProg(15,'再試行中…（'+(retries+1)+'/2）');
-      await new Promise(function(res){ setTimeout(res, 2000*(retries+1)); });
-      return callClaude(payload, retries+1);
-    }
-    throw new Error(msg);
-  }
-  var d=await r.json();
-  if(d.error) throw new Error(d.error.message||d.error);
-  return d.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
-}
-
+// LP組み立て用ユーティリティ
 function defaultPropInfo(pageInfo){
   return mergePageInfo({
     name:'物件資料',address:'',price:'―',madori:'―',menseki:'―',balcony:'―',kozo:'―',chiku:'―',
@@ -640,41 +634,76 @@ function enrichPropInfo(p){
   return p;
 }
 
-function isPageInfoUsable(pageInfo){
-  return pageInfo && pageInfo.name && pageInfo.price && pageInfo.price!=='―';
+// 物件情報抽出（参考ページ + マイソク Sonnet 解析）
+async function extractInfo(maisokuFile, pageHtml, photoUrls, pageInfo, source){
+  var base=enrichPropInfo(defaultPropInfo(pageInfo));
+
+  if(!maisokuFile){
+    setProg(12,'参考ページの情報を整理中…');
+    return base;
+  }
+
+  setProg(10,'マイソクをアップロード中…');
+  var ts=Date.now();
+  var ext=(maisokuFile.name.split('.').pop()||'pdf').toLowerCase();
+  var maisokuUrl=await uploadFile(maisokuFile, ts+'-maisoku.'+ext);
+  if(!maisokuUrl) throw new Error('マイソクのアップロードに失敗しました');
+
+  setProg(15,'解析ジョブを開始中…');
+  var job=await sbPost(TABLE_JOBS,{status:'pending'});
+
+  var bgRes=await fetch('/.netlify/functions/read-maisoku-background',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      jobId:job.id,
+      maisokuUrl:maisokuUrl,
+      mimetype:maisokuFile.type||'application/pdf',
+      pageInfo:pageInfo||{},
+      pageSnip:cleanPageText(pageHtml, source).substring(0,6000)
+    })
+  });
+  if(bgRes.status!==202 && bgRes.status!==200 && !bgRes.ok){
+    var be=await bgRes.json().catch(function(){return{};});
+    throw new Error(be.error||('解析開始失敗('+bgRes.status+')'));
+  }
+
+  setProg(20,'Sonnetがマイソクを読み取り中…（最大3分）');
+  var aiResult=await pollJob(job.id, 180000);
+  return enrichPropInfo(mergeMaisokuFirst(aiResult, pageInfo||{}));
 }
 
-// 物件情報抽出
-async function extractInfo(mb64, mtype, fb64, ftype, pageHtml, photoUrls, pageInfo, source, parsed){
-  if(!mb64 && isPageInfoUsable(pageInfo)){
-    setProg(12,'参考ページの情報を整理中…');
-    return enrichPropInfo(defaultPropInfo(pageInfo));
+function mergeMaisokuFirst(ai, page){
+  var base=defaultPropInfo(page||{});
+  if(!ai) return base;
+  Object.keys(ai).forEach(function(k){
+    var v=ai[k];
+    if(v===undefined||v===null) return;
+    if(typeof v==='string' && (!v.trim()||v==='―'||v==='-')) return;
+    if(Array.isArray(v) && !v.length) return;
+    base[k]=v;
+  });
+  if(page&&page.neighbors&&page.neighbors.length&&(!base.neighbors||!base.neighbors.length)) base.neighbors=page.neighbors;
+  if(page&&page._featureText){
+    if(!base.area_desc||base.area_desc==='―') base.area_desc=page._featureText.substring(0,400);
   }
+  return base;
+}
 
-  var msgs=[];
-  if(mb64){
-    if((mtype||'').startsWith('image/')) msgs.push({type:'image',source:{type:'base64',media_type:mtype,data:mb64}});
-    else msgs.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:mb64}});
+async function pollJob(jobId, maxMs){
+  var start=Date.now();
+  while(Date.now()-start<maxMs){
+    var rows=await sbGet(TABLE_JOBS,'id=eq.'+jobId+'&select=status,result,error');
+    var row=rows&&rows[0];
+    if(row){
+      if(row.status==='done'&&row.result) return row.result;
+      if(row.status==='error') throw new Error(row.error||'マイソク解析に失敗しました');
+    }
+    var pct=20+Math.min(55, Math.floor((Date.now()-start)/maxMs*55));
+    setProg(pct,'Sonnetがマイソクを読み取り中…');
+    await new Promise(function(r){ setTimeout(r, 2000); });
   }
-  if(fb64 && ftype && ftype.startsWith('image/')) msgs.push({type:'image',source:{type:'base64',media_type:ftype,data:fb64}});
-
-  var pageSnip=cleanPageText(pageHtml, source).substring(0,5000);
-  var pageJson=JSON.stringify(pageInfo||{});
-  var schema='{"name":"物件名","address":"住所","price":"販売価格","madori":"間取り","menseki":"専有面積","balcony":"バルコニー","kozo":"構造・階数","chiku":"築年月","kanrihi":"管理費","shuzenhk":"修繕積立金","parking":"駐車場","koutu":"交通","reno":"魅力・特徴（改行区切り）","setubi":"設備（改行区切り）","area_desc":"エリア解説","spots":[{"name":"","desc":""}],"neighbors":[{"cat":"","items":[""]}]}';
-  var txt='JSONのみ出力。参考ページ情報を優先。\n'+schema+'\n\n【抽出済み】'+pageJson+'\n\n【本文】'+pageSnip;
-  msgs.push({type:'text',text:txt});
-
-  var res=await callClaude({model:'claude-haiku-4-5',system:'JSONのみ。記号禁止。',max_tokens:2000,messages:[{role:'user',content:msgs}]});
-  var clean=res.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
-  try{
-    var obj=JSON.parse(clean);
-    Object.keys(obj).forEach(function(k){
-      if(typeof obj[k]==='string') obj[k]=obj[k].replace(/[◆◇■□▲△▼▽★☆♦\uFFFD]/g,'').trim();
-    });
-    return enrichPropInfo(mergePageInfo(obj, pageInfo||{}));
-  }catch(e){
-    return enrichPropInfo(defaultPropInfo(pageInfo));
-  }
+  throw new Error('マイソク解析がタイムアウトしました（3分）');
 }
 
 function pickPhotos(photoUrls, galleryPhotos){
