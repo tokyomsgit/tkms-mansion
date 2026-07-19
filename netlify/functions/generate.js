@@ -40,7 +40,7 @@ exports.handler = async function(event, context) {
   }
 
   const payload = JSON.stringify({
-    model: 'claude-sonnet-4-6',
+    model: body.model || 'claude-sonnet-4-6',
     max_tokens: body.max_tokens || 4000,
     system: body.system,
     messages: body.messages
@@ -52,7 +52,7 @@ exports.handler = async function(event, context) {
         hostname: 'api.anthropic.com',
         path: '/v1/messages',
         method: 'POST',
-        timeout: 55000,
+        timeout: 120000,
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': CLAUDE_API_KEY,
@@ -65,11 +65,24 @@ exports.handler = async function(event, context) {
         res.on('end', () => resolve({ status: res.statusCode, body: data }));
       });
 
-      req.on('timeout', () => { req.destroy(new Error('Request timeout')); });
+      req.on('timeout', () => { req.destroy(new Error('Claude APIがタイムアウトしました（120秒）')); });
       req.on('error', reject);
       req.write(payload);
       req.end();
     });
+
+    if (result.status >= 400) {
+      let errMsg = 'Claude API error ' + result.status;
+      try {
+        const errBody = JSON.parse(result.body);
+        errMsg = errBody.error?.message || errBody.error || errMsg;
+      } catch(e) {}
+      return {
+        statusCode: result.status,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: errMsg })
+      };
+    }
 
     return {
       statusCode: result.status,
@@ -82,9 +95,9 @@ exports.handler = async function(event, context) {
 
   } catch(err) {
     return {
-      statusCode: 500,
+      statusCode: 504,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: err.message || 'タイムアウト' })
     };
   }
 };
