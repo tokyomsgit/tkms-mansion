@@ -183,30 +183,39 @@
     return {mainPhoto:mainPhoto, gaikanPhoto:gaikanPhoto, subPhoto2:subPhoto2, otherPhotos:otherPhotos.slice(0,8)};
   }
 
+  function trimAtBoundary(s, max){
+    s=String(s||'').trim();
+    if(!s||s.length<=max) return s;
+    var cut=s.slice(0,max);
+    var i=Math.max(cut.lastIndexOf('。'),cut.lastIndexOf('、'),cut.lastIndexOf('．'));
+    if(i>=Math.floor(max*0.55)) return cut.slice(0,i+1);
+    return cut;
+  }
+
   function buildReasonCards(p, copy){
     var cards=[];
     var accessLines=parseAccessLines(p.koutu);
     if(accessLines.length){
-      cards.push({badge:'A',label:'Access',title:'好アクセス',desc:accessLines[0].substring(0,36)});
+      cards.push({badge:'A',label:'Access',title:'好アクセス',desc:trimAtBoundary(accessLines[0],80)});
     }
     var setubiLines=splitListText(p.setubi);
     if(setubiLines.length){
       cards.push({badge:'F',label:'Features',title:'充実の設備',desc:setubiLines[0]});
     }
     if(p.madori&&p.menseki){
-      cards.push({badge:'L',label:'Layout',title:'理想の間取り',desc:(p.madori+' / '+p.menseki).substring(0,36)});
+      cards.push({badge:'L',label:'Layout',title:'理想の間取り',desc:trimAtBoundary(p.madori+' / '+p.menseki,80)});
     }
     if(p.chiku&&p.chiku!=='―'){
       cards.push({badge:'Q',label:'Quality',title:'安心の物件',desc:formatChikuTag(p.chiku)});
     }
-    while(cards.length<3) cards.push({badge:'★',label:'Recommend',title:'おすすめ物件',desc:(p.name||'物件資料').substring(0,36)});
+    while(cards.length<3) cards.push({badge:'★',label:'Recommend',title:'おすすめ物件',desc:trimAtBoundary(p.name||'物件資料',80)});
     cards=cards.slice(0,3);
     if(copy&&copy.reason_hooks&&copy.reason_hooks.length){
       cards.forEach(function(c,i){
         var h=copy.reason_hooks[i];
         if(!h) return;
-        if(h.title&&h.title.length>=2) c.title=h.title.substring(0,20);
-        if(h.desc&&h.desc.length>=8) c.desc=h.desc.substring(0,48);
+        if(h.title&&h.title.length>=2) c.title=trimAtBoundary(h.title,28);
+        if(h.desc&&h.desc.length>=8) c.desc=h.desc;
       });
     }
     return cards;
