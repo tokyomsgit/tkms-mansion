@@ -95,6 +95,12 @@
     return n;
   }
 
+  function formatPriceDisplay(price){
+    var n=parseInt(String(price||'').replace(/[^0-9]/g,''),10);
+    if(!n) return price||'―';
+    return n.toLocaleString()+'万円';
+  }
+
   function formatChikuTag(chiku){
     var c=sanitizeText(chiku);
     if(!c||c==='―') return '―';
