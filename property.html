@@ -292,15 +292,18 @@ img,video,iframe{max-width:100%}
   .equip-item{padding:14px 16px}
   .equip-item:nth-child(odd){border-right:none}
 
-  .spec-table{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,0.04)}
-  .spec-table tr{display:flex;align-items:baseline;border-bottom:1px solid var(--border);margin-bottom:0;border-radius:0;box-shadow:none;padding:9px 14px}
-  .spec-table tr:last-child{border-bottom:none}
-  .spec-table td{display:block;width:auto!important;padding:0;white-space:normal;line-height:1.55}
-  .spec-table td:first-child{flex-shrink:0;background:transparent;border:none;font-weight:600;color:var(--gray);letter-spacing:0.02em;white-space:nowrap}
-  .spec-table td:first-child::after{content:'｜';margin:0 6px;color:rgba(0,0,0,0.22);font-weight:400}
-  .spec-table td:last-child{flex:1;min-width:0;padding:0;color:var(--dark);word-break:break-word}
-  #spec-section .section-title{margin-bottom:14px}
-  #spec-section.section{padding-top:28px;padding-bottom:28px}
+  .spec-table{border:none;background:transparent;box-shadow:none}
+  .spec-table tbody.spec-short-group{display:block;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.04)}
+  .spec-table tr.spec-row-long{display:block;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.04)}
+  .spec-table tr.spec-row-short{display:flex;align-items:baseline;border-bottom:1px solid var(--border);margin-bottom:0;border-radius:0;box-shadow:none;padding:9px 14px;background:transparent}
+  .spec-table tr.spec-row-short:last-child{border-bottom:none}
+  .spec-table tr.spec-row-long td{display:block;width:100%!important;padding:10px 16px;white-space:normal}
+  .spec-table tr.spec-row-long td:first-child{background:var(--light);padding-bottom:6px;letter-spacing:0.02em;border-bottom:1px solid var(--border)}
+  .spec-table tr.spec-row-long td:last-child{padding-top:8px;padding-bottom:14px}
+  .spec-table tr.spec-row-short td{display:block;width:auto!important;padding:0;white-space:normal;line-height:1.55}
+  .spec-table tr.spec-row-short td:first-child{flex-shrink:0;background:transparent;border:none;font-weight:600;color:var(--gray);letter-spacing:0.02em;white-space:nowrap}
+  .spec-table tr.spec-row-short td:first-child::after{content:'｜';margin:0 6px;color:rgba(0,0,0,0.22);font-weight:400}
+  .spec-table tr.spec-row-short td:last-child{flex:1;min-width:0;padding:0;color:var(--dark);word-break:break-word}
 
   .cost-hero{padding:28px 18px;border-radius:12px}
   .cost-hero-label{letter-spacing:0.08em}
