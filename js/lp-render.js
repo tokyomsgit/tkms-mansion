@@ -303,7 +303,7 @@
       ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
     ];
     var spec='<div id="spec-section" class="section fade-in"><div class="section-title">物件概要</div>'+
-      '<table class="spec-table">'+specRows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('')+'</table></div>';
+      '<table class="spec-table"><tbody>'+specRows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('')+'</tbody></table></div>';
 
     var renoHero='';
     if(p.reno&&p.reno!=='―'){
