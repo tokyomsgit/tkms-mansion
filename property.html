@@ -158,8 +158,8 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .cost-hero-value{font-size:clamp(40px,9vw,64px);font-weight:700;line-height:1}
 .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
 .cost-card{background:#fff;border-radius:12px;padding:16px 18px;border:1px solid var(--border);display:flex;align-items:baseline;flex-wrap:wrap;gap:0}
-.cost-card-label{font-size:28px;color:var(--gray);margin-bottom:0;letter-spacing:0.04em;flex-shrink:0;white-space:nowrap;font-weight:700}
-.cost-card-label::after{content:'｜';margin:0 8px;color:rgba(0,0,0,0.22);font-weight:400;font-size:0.85em}
+.cost-card-label{font-size:var(--fs-label);color:var(--gray);margin-bottom:0;letter-spacing:0.06em;flex-shrink:0;white-space:nowrap;font-weight:600}
+.cost-card-label::after{content:'｜';margin:0 8px;color:rgba(0,0,0,0.22);font-weight:400}
 .cost-card-value{font-size:28px;font-weight:700;color:var(--dark);line-height:1.2;flex:1;min-width:0}
 .chart-wrap{background:#fff;border-radius:12px;padding:24px;border:1px solid var(--border)}
 .chart-title{font-size:var(--fs-sm);color:var(--gray);margin-bottom:18px;letter-spacing:0.06em}
@@ -319,7 +319,7 @@ img,video,iframe{max-width:100%}
   .cost-hero-label{letter-spacing:0.08em;margin-bottom:8px}
   .cost-grid{grid-template-columns:1fr;gap:6px;margin-bottom:8px}
   .cost-card{padding:11px 14px;align-items:baseline}
-  .cost-card-label{font-size:28px;line-height:1.2}
+  .cost-card-label{font-size:var(--fs-label);line-height:1.35}
   .cost-card-label::after{margin:0 6px}
   .cost-card-value{font-size:28px;line-height:1.2}
   .chart-wrap{padding:14px}
