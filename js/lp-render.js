@@ -297,7 +297,7 @@
       '</div>';
 
     var specRows=[
-      ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
+      ['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
       ['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],['バルコニー', esc(p.balcony||'―')],
       ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
       ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
