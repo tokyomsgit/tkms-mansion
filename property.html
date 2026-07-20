@@ -369,6 +369,7 @@ img,video,iframe{max-width:100%}
   <a href="tel:0337897777">📞 お問い合わせ・内見予約：03-3789-7777</a>
 </div>
 
+<script src="js/property-name-fix.js"></script>
 <script src="js/lp-render.js"></script>
 <script>
 var SUPABASE_URL='https://bypticegujbxgvcctkju.supabase.co';
@@ -385,9 +386,9 @@ async function load(){
     var data=await r.json();
     if(!data||!data[0]){showError();return;}
     var prop=data[0];
-    document.title=(prop.name||'物件資料')+' — 東京マンション株式会社';
     var displayName=prop.name||'物件資料';
     if(window.LPRender&&LPRender.cleanDisplayName) displayName=LPRender.cleanDisplayName(displayName);
+    document.title=displayName+' — 東京マンション株式会社';
     document.getElementById('header-title').textContent=displayName;
     var html='';
     if(prop.property_data&&prop.property_data.info){

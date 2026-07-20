@@ -45,7 +45,8 @@ exports.handler = async function(event) {
     refUrl: refUrl,
     maisokuUrl: body.maisokuUrl || '',
     madoriUrl: body.madoriUrl || '',
-    maisokuMime: body.maisokuMime || 'application/pdf'
+    maisokuMime: body.maisokuMime || 'application/pdf',
+    nameOverride: (body.nameOverride || '').trim()
   };
 
   try {

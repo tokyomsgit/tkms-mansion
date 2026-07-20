@@ -32,9 +32,11 @@ async function runPipeline(jobId, input) {
       await progress(35, 'Sonnetがマイソクを読み取り中…（最大3分）');
       const pageSnip = core.cleanPageText(pageHtml, parsed.source).substring(0, 6000);
       const aiResult = await core.parseMaisokuWithClaude(maisokuUrl, maisokuMime, parsed.pageInfo, pageSnip);
-      info = core.mergeMaisokuFirst(aiResult, parsed.pageInfo);
+      info = core.mergeMaisokuFirst(aiResult, parsed.pageInfo, { nameOverride: input.nameOverride || '' });
       await progress(75, 'マイソク解析が完了しました');
     } else {
+      info = core.defaultPropInfo(parsed.pageInfo);
+      if (input.nameOverride) info.name = input.nameOverride;
       info = core.enrichPropInfo(info);
     }
 

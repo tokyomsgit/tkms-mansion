@@ -37,6 +37,8 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
 .prop-actions{display:flex;gap:8px;margin-top:4px}
 .btn-url{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--text-dim);font-family:inherit;cursor:pointer}
 .btn-url:hover{border-color:var(--gold-dim);color:var(--gold)}
+.btn-edit{background:none;border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--text-dim);font-family:inherit;cursor:pointer}
+.btn-edit:hover{border-color:var(--green);color:var(--green)}
 .btn-del{background:none;border:1px solid var(--border);border-radius:5px;padding:5px 12px;font-size:11px;color:var(--text-dim);font-family:inherit;cursor:pointer}
 .btn-del:hover{border-color:var(--red);color:var(--red)}
 .empty{color:var(--text-dim);font-size:14px;padding:40px 0;text-align:center;grid-column:1/-1}
@@ -145,6 +147,12 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
       <div class="f-hint">未アップロードの場合、参考ページから間取り画像を自動取得します</div>
     </div>
 
+    <div>
+      <label class="f-label">④ 物件名 <span style="color:var(--text-dim)">（任意）</span></label>
+      <input class="f-input" type="text" id="prop-name-override" placeholder="例：グリーンパーク日本橋浜町">
+      <div class="f-hint">マイソク読み取りで誤字が出る場合、正しいマンション名を指定してください（最優先で使用）</div>
+    </div>
+
     <div class="status-wrap" id="status-wrap">
       <div class="s-row"><div class="s-dot" id="d1"></div><span id="l1">ファイルをアップロード中…</span></div>
       <div class="s-row"><div class="s-dot" id="d2"></div><span id="l2">参考ページURLを送信準備中…</span></div>
@@ -171,6 +179,7 @@ body{background:var(--bg);font-family:'Noto Serif JP','游明朝',serif;color:va
 
 <div id="toast"></div>
 
+<script src="js/property-name-fix.js"></script>
 <script>
 var SUPABASE_URL = 'https://bypticegujbxgvcctkju.supabase.co';
 var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5cHRpY2VndWpieGd2Y2N0a2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NzA3OTUsImV4cCI6MjA5NzA0Njc5NX0.4fzXRVUYKzkDDmOzEiq3PP0Wk8ZujdD7AJAYivnWgbc';
@@ -218,6 +227,10 @@ function formatDbError(msg){
   return msg;
 }
 async function sbDel(t,id){ await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'DELETE',headers:SBH}); }
+async function sbPatch(t,id,d){
+  var r=await fetch(SUPABASE_URL+'/rest/v1/'+t+'?id=eq.'+id,{method:'PATCH',headers:SBH,body:JSON.stringify(d)});
+  if(!r.ok){ var j=await r.json().catch(function(){ return {}; }); throw new Error((j.message||j.error||'更新失敗')+' ('+r.status+')'); }
+}
 async function uploadFile(file,path){
   try{
     var r=await fetch(SUPABASE_URL+'/storage/v1/object/'+STORAGE_BUCKET+'/'+path,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON,'Content-Type':file.type||'application/octet-stream','x-upsert':'true'},body:file});
@@ -232,8 +245,29 @@ async function loadProps(){
   var grid=document.getElementById('prop-grid');
   if(!data||!data.length){ grid.innerHTML='<div class="empty">まだ物件がありません。「＋ 新規作成」から追加してください。</div>'; return; }
   grid.innerHTML=data.map(function(p){
-    return '<div class="prop-card"><div class="prop-name">'+esc(p.name||'無題')+'</div><div class="prop-meta"><span>'+esc(p.address||'―')+'</span><span>'+fmtDate(p.created_at)+'</span></div><div class="prop-actions"><button class="btn-url" onclick="copyUrl(\''+p.id+'\')">URLをコピー</button><button class="btn-del" onclick="delProp(\''+p.id+'\')">削除</button></div></div>';
+    return '<div class="prop-card"><div class="prop-name">'+esc(p.name||'無題')+'</div><div class="prop-meta"><span>'+esc(p.address||'―')+'</span><span>'+fmtDate(p.created_at)+'</span></div><div class="prop-actions"><button class="btn-url" onclick="copyUrl(\''+p.id+'\')">URLをコピー</button><button class="btn-edit" onclick="editPropName(\''+p.id+'\',\''+escAttr(p.name||'')+'\')">名前修正</button><button class="btn-del" onclick="delProp(\''+p.id+'\')">削除</button></div></div>';
   }).join('');
+}
+function escAttr(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+async function editPropName(id, currentName){
+  var next=prompt('物件名を修正してください', currentName||'');
+  if(next===null) return;
+  next=next.trim();
+  if(!next){ toast('物件名を入力してください'); return; }
+  if(typeof PropertyNameFix!=='undefined') next=PropertyNameFix.canonicalizePropertyName(next);
+  if(next===currentName) return;
+  try{
+    var rows=await sbGet(TABLE_PROPERTIES,'select=property_data&id=eq.'+id);
+    var patch={name:next};
+    if(rows&&rows[0]&&rows[0].property_data){
+      var pd=JSON.parse(JSON.stringify(rows[0].property_data));
+      if(pd.info) pd.info.name=next;
+      patch.property_data=pd;
+    }
+    await sbPatch(TABLE_PROPERTIES,id,patch);
+    toast('物件名を更新しました');
+    loadProps();
+  }catch(e){ toast('更新失敗: '+e.message); }
 }
 function copyUrl(id){ navigator.clipboard.writeText(SITE_URL+'/property.html?id='+id).then(function(){ toast('URLをコピーしました'); }); }
 async function delProp(id){ if(!confirm('削除しますか？')) return; await sbDel(TABLE_PROPERTIES,id); toast('削除しました'); loadProps(); }
@@ -248,6 +282,7 @@ function closeModal(){ document.getElementById('overlay').classList.remove('open
 function resetModal(){
   maisokuFile=null; madoriFile=null;
   document.getElementById('prop-url').value='';
+  document.getElementById('prop-name-override').value='';
   document.getElementById('f-maisoku').value='';
   document.getElementById('f-madori').value='';
   document.getElementById('badge-m').className='badge';
@@ -344,7 +379,7 @@ async function generate(){
     var startRes=await fetch('/.netlify/functions/generate-property',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({refUrl:url,maisokuUrl:maisokuUrl,madoriUrl:madoriUrl,maisokuMime:maisokuMime})
+      body:JSON.stringify({refUrl:url,maisokuUrl:maisokuUrl,madoriUrl:madoriUrl,maisokuMime:maisokuMime,nameOverride:document.getElementById('prop-name-override').value.trim()})
     });
     var startData=await startRes.json();
     if(!startRes.ok) throw new Error(formatDbError(startData.error||('生成開始失敗('+startRes.status+')')));

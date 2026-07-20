@@ -9,11 +9,13 @@
   }
 
   function fixTextCorruption(s){
+    if(typeof PropertyNameFix!=='undefined') return PropertyNameFix.fixTextCorruption(s);
     if(!s) return s;
     return String(s)
       .replace(/\uFFFD/g,'')
       .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')
       .replace(/グ[\uFFFD�]{1,3}ーン/g,'グリーン')
+      .replace(/グーン/g,'グリーン')
       .replace(/��+/g,'');
   }
 
@@ -27,6 +29,7 @@
     }
     name=name.replace(/\s+\d+(?:\.\d+)?\s*万円.*$/,'').trim();
     name=name.replace(/\s*[（(]\s*[\d.]+\s*万円.*$/,'').trim();
+    if(typeof PropertyNameFix!=='undefined') return PropertyNameFix.canonicalizePropertyName(name);
     return name;
   }
 
@@ -192,6 +195,12 @@
     return cut;
   }
 
+  function trimTitle(s, max){
+    s=String(s||'').trim();
+    if(!s||s.length<=max) return s;
+    return s.slice(0,max);
+  }
+
   function buildReasonCards(p, copy){
     var cards=[];
     var accessLines=parseAccessLines(p.koutu);
@@ -214,7 +223,7 @@
       cards.forEach(function(c,i){
         var h=copy.reason_hooks[i];
         if(!h) return;
-        if(h.title&&h.title.length>=2) c.title=trimAtBoundary(h.title,28);
+        if(h.title&&h.title.length>=2) c.title=trimTitle(h.title,15);
         if(h.desc&&h.desc.length>=8) c.desc=h.desc;
       });
     }

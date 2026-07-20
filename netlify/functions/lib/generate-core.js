@@ -1,5 +1,6 @@
 const https = require('https');
 const http = require('http');
+const nameFix = require('../../../js/property-name-fix.js');
 
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
 
@@ -58,12 +59,7 @@ function decodeHtml(s) {
 }
 
 function fixTextCorruption(s) {
-  if (!s) return s;
-  return String(s)
-    .replace(/\uFFFD/g, '')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
-    .replace(/グ[\uFFFD�]{1,3}ーン/g, 'グリーン')
-    .replace(/��+/g, '');
+  return nameFix.fixTextCorruption(s);
 }
 
 function cleanPropertyName(name, info) {
@@ -76,7 +72,7 @@ function cleanPropertyName(name, info) {
   }
   name = name.replace(/\s+\d+(?:\.\d+)?\s*万円.*$/, '').trim();
   name = name.replace(/\s*[（(]\s*[\d.]+\s*万円.*$/, '').trim();
-  return name;
+  return nameFix.canonicalizePropertyName(name);
 }
 
 function cleanCell(s) {
@@ -469,7 +465,8 @@ function enrichPropInfo(p) {
   return sanitizePropInfo(p);
 }
 
-function mergeMaisokuFirst(ai, page) {
+function mergeMaisokuFirst(ai, page, options) {
+  options = options || {};
   var base = defaultPropInfo(page || {});
   if (!ai) return base;
   Object.keys(ai).forEach(function(k) {
@@ -479,6 +476,7 @@ function mergeMaisokuFirst(ai, page) {
     if (Array.isArray(v) && !v.length) return;
     base[k] = v;
   });
+  base.name = nameFix.reconcilePropertyName(base.name, page && page.name, options.nameOverride);
   if (page && page.neighbors && page.neighbors.length && (!base.neighbors || !base.neighbors.length)) base.neighbors = page.neighbors;
   if (page && page._featureText) {
     if (!base.area_desc || base.area_desc === '―') base.area_desc = page._featureText.substring(0, 400);
@@ -502,6 +500,11 @@ function buildPropertyData(info, galleryPhotos, madoriUrl, copy) {
 function sanitizeCopy(raw) {
   if (!raw || typeof raw !== 'object') return null;
   function t(s) { return fixTextCorruption(sanitizeText(String(s || ''))); }
+  function trimTitle(s, max) {
+    s = t(s);
+    if (!s || s.length <= max) return s;
+    return s.slice(0, max);
+  }
   var copy = {
     target_audience: t(raw.target_audience),
     madori_desc: t(raw.madori_desc),
@@ -523,7 +526,7 @@ function sanitizeCopy(raw) {
   (raw.reason_hooks || []).slice(0, 3).forEach(function(r, i) {
     if (!copy.reason_hooks) copy.reason_hooks = [];
     var desc = t(r.desc || r);
-    if (desc.length >= 10) copy.reason_hooks.push({ title: t(r.title) || '', desc: desc });
+    if (desc.length >= 10) copy.reason_hooks.push({ title: trimTitle(r.title, 15) || '', desc: desc });
   });
   var hasContent = copy.madori_desc || copy.access_intro || copy.area_blocks.length || copy.spots.length;
   return hasContent ? copy : null;
@@ -542,7 +545,7 @@ async function generateMarketingCopyWithClaude(info) {
     spots: (info.spots || []).slice(0, 4)
   };
 
-  var schema = '{"target_audience":"想定ターゲット（1行）","madori_desc":"間取り訴求文（80-120字）","access_intro":"交通アクセス訴求文（60-100字）","reno_intro":"リノベ訴求文（50-80字・リノベなければ空文字）","area_blocks":[{"title":"立地","text":"100-140字"},{"title":"生活環境","text":"100-140字"}],"spots":[{"name":"スポット名","desc":"60-90字・ライフスタイル訴求"}],"reason_hooks":[{"title":"短い見出し","desc":"40-60字"}]}';
+  var schema = '{"target_audience":"想定ターゲット（1行）","madori_desc":"間取り訴求文（80-120字）","access_intro":"交通アクセス訴求文（60-100字）","reno_intro":"リノベ訴求文（50-80字・リノベなければ空文字）","area_blocks":[{"title":"立地","text":"100-140字"},{"title":"生活環境","text":"100-140字"}],"spots":[{"name":"スポット名","desc":"60-90字・ライフスタイル訴求"}],"reason_hooks":[{"title":"15文字以内の見出し","desc":"40-60字"}]}';
 
   var prompt = 'あなたは東京マンション株式会社の物件資料ライター。以下の物件データからターゲット層を仮説立てし、高級感のある物件資料向け文案をJSONのみで出力。\n\n'
     + '【ルール】\n'
@@ -550,7 +553,7 @@ async function generateMarketingCopyWithClaude(info) {
     + '- 文体: 丁寧語（です・ます）。誇大広告・絵文字・記号（！？★）禁止\n'
     + '- 具体的な地名・路線名・数字を自然に織り込む\n'
     + '- spotsは neighbors/spots の実在施設名をベースに、暮らしのシーンが浮かぶ描写に\n'
-    + '- reason_hooksは3件（好アクセス/間取り/エリア等）\n'
+    + '- reason_hooksは3件（好アクセス/間取り/エリア等）。titleは必ず15文字以内（厳守・改行なし1行表示のため）。例:「3路線好アクセス」「東南角2面採光」「都心の成熟エリア」\n'
     + '- 不明な情報は推測せず、一般的な魅力で補う\n\n'
     + schema + '\n\n【物件データ】\n' + JSON.stringify(snapshot, null, 0);
 
@@ -649,8 +652,10 @@ async function parseMaisokuWithClaude(maisokuUrl, mimetype, pageInfo, pageSnip) 
     content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } });
   }
 
-  const schema = '{"name":"物件名","address":"住所","price":"販売価格","madori":"間取り","menseki":"専有面積","balcony":"バルコニー","kozo":"構造・階数","chiku":"築年月","kanrihi":"管理費","shuzenhk":"修繕積立金","parking":"駐車場","koutu":"交通","reno":"リノベ施工（改行区切り）","setubi":"設備（改行区切り）","area_desc":"エリア解説","spots":[{"name":"","desc":""}],"neighbors":[{"cat":"","items":[""]}]}';
-  const txt = 'マイソクを正確に読み取りJSONのみ出力。帯（手数料・免責・宅建番号）は無視。参考ページ情報と矛盾する場合はマイソク優先。記号禁止。\n'
+  const schema = '{"name":"物件名（マンション名・原文どおり正確に）","address":"住所","price":"販売価格","madori":"間取り","menseki":"専有面積","balcony":"バルコニー","kozo":"構造・階数","chiku":"築年月","kanrihi":"管理費","shuzenhk":"修繕積立金","parking":"駐車場","koutu":"交通","reno":"リノベ施工（改行区切り）","setubi":"設備（改行区切り）","area_desc":"エリア解説","spots":[{"name":"","desc":""}],"neighbors":[{"cat":"","items":[""]}]}';
+  const txt = 'マイソクを正確に読み取りJSONのみ出力。帯（手数料・免責・宅建番号）は無視。\n'
+    + '【物件名の注意】nameはマイソク・参考ページに記載のマンション名を1文字も省略・変形せずそのまま写す。例:「グリーンパーク日本橋浜町」を「グーンパーク」にしない。固有名詞の読みは原文優先。\n'
+    + '参考ページ情報と矛盾する場合はマイソク優先（ただし物件名は読み取りを正確に）。記号禁止。\n'
     + schema + '\n\n【参考ページ抽出済み】\n' + JSON.stringify(pageInfo || {})
     + '\n\n【参考ページ本文】\n' + String(pageSnip || '').substring(0, 6000);
 
@@ -659,7 +664,7 @@ async function parseMaisokuWithClaude(maisokuUrl, mimetype, pageInfo, pageSnip) 
   const claudeRes = await callClaude(CLAUDE_API_KEY, {
     model: CLAUDE_MODEL,
     max_tokens: 3500,
-    system: 'JSONのみ出力。説明不要。記号禁止。',
+    system: 'JSONのみ出力。説明不要。記号禁止。物件名（name）は固有名詞を省略・変形しない。',
     messages: [{ role: 'user', content: content }]
   });
 
