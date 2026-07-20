@@ -263,7 +263,7 @@
       '</div></div></div>';
 
     var reason='<div id="reason-section"><div class="section">'+
-      '<div class="section-title">この物件を選ぶ理由</div>'+
+      '<div class="section-title">おすすめポイント</div>'+
       '<div class="reason-grid">'+reasons.map(function(c){
         return '<div class="reason-card"><div class="reason-title">'+esc(c.title)+'</div><div class="reason-desc">'+esc(c.desc)+'</div></div>';
       }).join('')+'</div></div></div>';
@@ -286,7 +286,7 @@
     if(!accessIntro) accessIntro=accessLines.length>1 ? '複数路線を利用でき、都心へのアクセスも良好な立地です。' : (accessLines.length===1 ? '駅近の好立地で、通勤・買い物にも便利です。' : '交通アクセスの詳細はお問い合わせください。');
     var accessList=accessLines.length ? accessLines.map(function(line){
       var parts=line.match(/^(.+?[「」\s\S]+?)(徒歩\d+分)/);
-      if(parts) return '<li><span class="access-dot"></span><strong>'+esc(parts[1].trim())+'</strong>'+esc(parts[2])+'</li>';
+      if(parts) return '<li><span class="access-dot"></span><strong>'+esc(parts[1].trim())+'</strong><span class="access-walk">'+esc(parts[2])+'</span></li>';
       return '<li><span class="access-dot"></span>'+esc(line)+'</li>';
     }).join('') : '<li><span class="access-dot"></span>'+esc(p.koutu||'―')+'</li>';
     var mapAddr=mapAddress(p);
@@ -297,7 +297,7 @@
       '</div>';
 
     var specRows=[
-      ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', '<span class="spec-highlight">'+esc(formatPriceDisplay(p.price))+'</span>'],
+      ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
       ['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],['バルコニー', esc(p.balcony||'―')],
       ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
       ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]

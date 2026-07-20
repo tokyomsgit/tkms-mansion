@@ -38,7 +38,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 
 /* ===== ヘッダー ===== */
 #site-header{position:sticky;top:0;z-index:100;background:rgba(22,34,33,0.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(126,184,160,0.18);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between}
-.header-company{font-size:10px;color:var(--green);letter-spacing:0.18em;font-weight:500;text-transform:uppercase}
+.header-company{font-size:10px;color:#fff;letter-spacing:0.18em;font-weight:500;text-transform:uppercase}
 .header-title{font-size:13px;font-weight:600;letter-spacing:0.08em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
 .header-tel{font-size:12px;font-weight:600;color:var(--gold);letter-spacing:0.12em;text-decoration:none;border:1px solid rgba(200,184,154,0.35);padding:6px 14px;border-radius:20px;transition:all 0.25s}
 .header-tel:hover{color:var(--gold2);border-color:var(--gold);background:rgba(200,184,154,0.08)}
@@ -65,7 +65,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .hero-eyebrow,.section-eyebrow,.cta-eyebrow,.reason-icon,.reason-label{display:none!important}
 .hero-company{font-size:var(--fs-hero-company);color:rgba(255,255,255,0.55);letter-spacing:0.1em;margin-bottom:10px}
 .hero-name{font-size:calc(var(--fs-hero-name) - 2px);font-weight:700;letter-spacing:0.04em;line-height:1.25;margin-bottom:6px;text-shadow:0 2px 24px rgba(0,0,0,0.25)}
-.hero-room{font-size:calc(var(--fs-hero-name) - 2px);color:rgba(126,184,160,0.95);letter-spacing:0.04em;font-weight:500;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hero-room{font-size:calc(var(--fs-hero-name) - 2px);color:#fff;letter-spacing:0.04em;font-weight:500;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .hero-sep{opacity:0.4;font-weight:400}
 .hero-price-wrap{margin-bottom:0;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12)}
 .hero-price-label{font-size:var(--fs-label);color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-bottom:4px;text-transform:uppercase;font-weight:500}
@@ -76,7 +76,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 /* ===== セクション共通 ===== */
 .section{padding:44px 28px;max-width:840px;margin:0 auto}
 .section-full{padding:0;max-width:100%;margin:0}
-.section-eyebrow{font-size:var(--fs-section-eyebrow);font-weight:500;color:var(--green-dim);letter-spacing:0.16em;margin-bottom:6px;text-transform:uppercase}
+.section-eyebrow{font-size:var(--fs-section-eyebrow);font-weight:500;color:#fff;letter-spacing:0.16em;margin-bottom:6px;text-transform:uppercase}
 .section-title{font-size:var(--fs-section-title);font-weight:700;letter-spacing:0.04em;margin-bottom:20px;color:var(--dark);position:relative;padding-bottom:6px;line-height:1.35}
 .section-title::after{content:'';position:absolute;bottom:0;left:0;width:48px;height:2px;background:linear-gradient(90deg,var(--green),transparent);border-radius:1px}
 
@@ -90,15 +90,15 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .visual-sub-img{flex:1;position:relative;overflow:hidden;background:var(--dark)}
 .visual-label{position:absolute;bottom:12px;left:14px;font-size:var(--fs-label);color:#fff;letter-spacing:0.1em;background:rgba(22,34,33,0.55);padding:4px 12px;border-radius:20px;backdrop-filter:blur(6px)}
 
-/* ===== 選ぶ理由 ===== */
+/* ===== おすすめポイント ===== */
 #reason-section{background:var(--dark);margin-top:20px}
 #reason-section .section{max-width:900px;padding:28px 28px 32px}
 #reason-section .section-title{margin-bottom:10px;padding-bottom:3px;color:#fff;line-height:1.3}
 .reason-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.reason-card{text-align:center;padding:14px 16px;border:1px solid rgba(126,184,160,0.15);border-radius:16px;background:rgba(255,255,255,0.03);transition:border-color 0.3s,transform 0.3s,box-shadow 0.3s}
+.reason-card{text-align:left;padding:14px 16px;border:1px solid rgba(126,184,160,0.15);border-radius:16px;background:rgba(255,255,255,0.03);transition:border-color 0.3s,transform 0.3s,box-shadow 0.3s}
 .reason-card:hover{border-color:rgba(126,184,160,0.45);transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,0.2)}
 .reason-title{font-size:var(--fs-reason-title);font-weight:700;color:#fff;letter-spacing:0.03em;margin-bottom:6px;line-height:1.45}
-.reason-desc{font-size:var(--fs-reason-desc);color:rgba(255,255,255,0.65);line-height:1.65}
+.reason-desc{font-size:var(--fs-reason-desc);color:#fff;line-height:1.65}
 
 /* ===== 間取り ===== */
 .madori-wrap{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
@@ -131,13 +131,14 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .access-list li{display:flex;align-items:center;gap:14px;font-size:var(--fs-body);padding:16px 20px;background:#fff;border-radius:12px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.03)}
 .access-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 0 3px rgba(126,184,160,0.2)}
 .access-list li strong{font-weight:700;color:var(--dark);min-width:120px}
+.access-walk{font-weight:700;font-size:calc(var(--fs-body) + 1px);color:var(--dark);flex-shrink:0}
 .map-container{width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow)}
 .map-container iframe{width:100%;height:100%;border:0;display:block}
 
 /* ===== リノベ ===== */
 .reno-hero{background:linear-gradient(135deg,var(--dark),var(--dark2));border-radius:16px;padding:32px 36px;margin-bottom:28px;color:#fff}
 .reno-hero-text{font-size:19px;font-weight:300;letter-spacing:0.06em;line-height:1.85}
-.reno-hero-text em{color:var(--green);font-style:normal;font-weight:600}
+.reno-hero-text em{color:#fff;font-style:normal;font-weight:600}
 .equip-list{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
 .equip-item{font-size:var(--fs-body);padding:13px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .equip-item:nth-child(odd){border-right:1px solid var(--border)}
@@ -147,13 +148,13 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .spec-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#fff;box-shadow:0 2px 12px rgba(0,0,0,0.04)}
 .spec-table tr{border-bottom:1px solid var(--border)}
 .spec-table tr:last-child{border-bottom:none}
-.spec-table td{padding:15px 18px;font-size:var(--fs-body);vertical-align:top;line-height:1.7}
-.spec-table td:first-child{font-weight:600;color:var(--gray);width:30%;background:var(--light);font-size:var(--fs-sm);letter-spacing:0.06em;white-space:nowrap}
-.spec-highlight{font-size:24px;font-weight:700;color:var(--dark)}
+.spec-table td{padding:15px 18px;font-size:calc(var(--fs-body) + 1px);vertical-align:top;line-height:1.7}
+.spec-table td:first-child{font-weight:600;color:var(--gray);width:30%;background:var(--light);font-size:calc(var(--fs-sm) + 1px);letter-spacing:0.06em;white-space:nowrap}
+.spec-highlight{font-size:inherit;font-weight:inherit;color:inherit}
 
 /* ===== 費用 ===== */
 .cost-hero{background:linear-gradient(135deg,var(--dark),var(--dark2));border-radius:16px;padding:36px;color:#fff;margin-bottom:20px;text-align:center}
-.cost-hero-label{font-size:var(--fs-label);color:var(--green);letter-spacing:0.12em;margin-bottom:12px;font-weight:500;text-transform:uppercase}
+.cost-hero-label{font-size:var(--fs-label);color:#fff;letter-spacing:0.12em;margin-bottom:12px;font-weight:500;text-transform:uppercase}
 .cost-hero-value{font-size:clamp(40px,9vw,64px);font-weight:700;line-height:1}
 .cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
 .cost-card{background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border)}
@@ -184,7 +185,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 /* ===== CTA ===== */
 #cta-section{background:var(--dark);margin-top:20px}
 #cta-section .section{max-width:680px;text-align:center;padding:48px 28px}
-.cta-eyebrow{font-size:var(--fs-section-eyebrow);font-weight:500;color:var(--green);letter-spacing:0.18em;margin-bottom:16px;text-transform:uppercase}
+.cta-eyebrow{font-size:var(--fs-section-eyebrow);font-weight:500;color:#fff;letter-spacing:0.18em;margin-bottom:16px;text-transform:uppercase}
 .cta-title{font-size:clamp(24px,4vw,32px);font-weight:700;color:#fff;letter-spacing:0.04em;margin-bottom:10px;line-height:1.45}
 .cta-sub{font-size:var(--fs-body);color:rgba(255,255,255,0.55);line-height:1.85;margin-bottom:28px}
 .cta-btn{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:var(--gold);color:var(--dark);border-radius:60px;padding:22px 52px;text-decoration:none;transition:all 0.3s;box-shadow:0 8px 32px rgba(200,184,154,0.25)}
@@ -197,7 +198,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 /* ===== フッター ===== */
 .footer{background:var(--dark);color:#fff;padding:36px 28px;text-align:center;border-top:1px solid rgba(126,184,160,0.15)}
 .footer-company{font-size:var(--fs-body);font-weight:600;letter-spacing:0.12em;margin-bottom:6px}
-.footer-sub{font-size:var(--fs-label);font-weight:500;color:var(--green);letter-spacing:0.16em;margin-bottom:20px}
+.footer-sub{font-size:var(--fs-label);font-weight:500;color:#fff;letter-spacing:0.16em;margin-bottom:20px}
 .footer-note{font-size:var(--fs-sm);color:rgba(255,255,255,0.35);line-height:1.95;max-width:560px;margin:0 auto}
 
 /* ===== 固定CTA ===== */
@@ -213,7 +214,7 @@ img,video,iframe{max-width:100%}
   .visual-wrap{grid-template-columns:1fr 1fr;height:380px}
   .visual-sub{flex-direction:column}
   .reason-grid{grid-template-columns:repeat(2,1fr)}
-  .reason-grid .reason-card:last-child:nth-child(odd){grid-column:1/-1;max-width:360px;margin:0 auto;width:100%}
+  .reason-grid .reason-card:last-child:nth-child(odd){grid-column:1/-1;max-width:none;width:100%}
   #reason-section .section{padding:28px 24px}
   .madori-wrap{gap:24px}
   .madori-img,.madori-info{min-width:100%;flex:1 1 100%}
@@ -296,7 +297,6 @@ img,video,iframe{max-width:100%}
   .spec-table td{display:block;width:100%!important;padding:10px 16px;white-space:normal}
   .spec-table td:first-child{background:var(--light);padding-bottom:6px;letter-spacing:0.02em;border-bottom:1px solid var(--border)}
   .spec-table td:last-child{padding-top:8px;padding-bottom:14px}
-  .spec-highlight{font-size:26px}
 
   .cost-hero{padding:28px 18px;border-radius:12px}
   .cost-hero-label{letter-spacing:0.08em}
