@@ -26,7 +26,7 @@
   --fs-label:15px;
   --fs-hero-eyebrow:15px;
   --fs-hero-company:15px;
-  --fs-hero-room:18px;
+  --fs-hero-room:24px;
   --fs-section-eyebrow:15px;
   --fs-section-title:clamp(24px,3vw,30px);
   --fs-reason-title:20px;
@@ -71,8 +71,6 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .hero-price-label{font-size:var(--fs-label);color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-bottom:8px;text-transform:uppercase;font-weight:500}
 .hero-price{font-size:clamp(44px,10vw,80px);font-weight:700;color:#fff;letter-spacing:0.02em;line-height:1}
 .hero-price-suffix{font-size:clamp(18px,2.5vw,28px);font-weight:500;margin-left:6px;opacity:0.85}
-.hero-tags{display:flex;flex-wrap:wrap;gap:8px}
-.hero-tag-item{background:rgba(255,255,255,0.08);border:1px solid rgba(126,184,160,0.3);border-radius:24px;padding:7px 16px;font-size:var(--fs-sm);color:var(--green);letter-spacing:0.04em;backdrop-filter:blur(4px)}
 
 /* ===== セクション共通 ===== */
 .section{padding:64px 28px;max-width:840px;margin:0 auto}
@@ -233,7 +231,7 @@ img,video,iframe{max-width:100%}
     --fs-label:17px;
     --fs-hero-eyebrow:17px;
     --fs-hero-company:16px;
-    --fs-hero-room:20px;
+    --fs-hero-room:24px;
     --fs-section-eyebrow:17px;
     --fs-section-title:27px;
     --fs-reason-title:22px;
@@ -257,8 +255,6 @@ img,video,iframe{max-width:100%}
   .hero-price-label{letter-spacing:0.08em;margin-bottom:6px}
   .hero-price{font-size:clamp(54px,14vw,72px)}
   .hero-price-suffix{font-size:clamp(22px,5.5vw,26px)}
-  .hero-tags{gap:6px}
-  .hero-tag-item{padding:6px 12px;letter-spacing:0.02em;white-space:nowrap}
 
   .section{padding:40px 16px}
   .section-title{margin-bottom:24px;letter-spacing:0.04em}
@@ -351,7 +347,6 @@ img,video,iframe{max-width:100%}
 /* 小型スマートフォン — 文字は縮小せずレイアウトのみ調整 */
 @media(max-width:380px){
   .header-tel{font-size:13px;padding:5px 8px}
-  .hero-tag-item{padding:5px 9px}
   .visual-sub{height:100px}
 }
 </style>

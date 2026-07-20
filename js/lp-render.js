@@ -363,11 +363,6 @@
         '<div class="hero-price-label">販売価格（税込）</div>'+
         '<div class="hero-price"><span data-cu="'+priceMan+'" data-sf="万円">'+priceDisplay+'</span><span class="hero-price-suffix">万円</span></div>'+
       '</div>'+
-      '<div class="hero-tags">'+
-        '<span class="hero-tag-item">'+esc(p.madori||'')+'</span>'+
-        '<span class="hero-tag-item">'+esc(p.menseki||'')+'</span>'+
-        '<span class="hero-tag-item">'+esc(formatChikuTag(p.chiku||'―'))+'</span>'+
-      '</div>'+
       '</div></div>';
 
     var cost='<div id="cost-section" class="section fade-in">'+
