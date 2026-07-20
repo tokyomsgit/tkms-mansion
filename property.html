@@ -441,7 +441,7 @@ function showError(){
 }
 
 function initAll(){
-  document.querySelectorAll('.hero-tags,.hero-eyebrow,.section-eyebrow,.cta-eyebrow,.reason-icon,.reason-label,.footer-sub').forEach(function(el){el.remove();});
+  document.querySelectorAll('.hero-tags,.hero-eyebrow,.section-eyebrow,.cta-eyebrow,.reason-icon,.reason-label,.footer-sub,.visual-label,.slider-cap,.slider-label,.gallery-label,.photo-label').forEach(function(el){el.remove();});
   initFadeIn();
   initSlider();
   initCostObserver();
@@ -506,12 +506,6 @@ function initSlider(){
     var img=document.createElement('img');
     img.src=item.src;img.alt=item.label;img.loading='lazy';
     slide.appendChild(img);
-    if(item.label){
-      var cap=document.createElement('div');
-      cap.className='slider-cap';
-      cap.innerHTML='<div class="slider-label">'+item.label+'</div>';
-      slide.appendChild(cap);
-    }
     track.appendChild(slide);
   });
   wrap.appendChild(track);

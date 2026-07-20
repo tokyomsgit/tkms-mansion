@@ -263,8 +263,8 @@
     var visual='<div id="visual-section" class="section-full fade-in"><div class="visual-wrap">'+
       '<div class="visual-main"><img src="'+escUrl(ph.mainPhoto)+'" alt="リビング" loading="lazy"></div>'+
       '<div class="visual-sub">'+
-        '<div class="visual-sub-img"><img src="'+escUrl(ph.gaikanPhoto)+'" alt="外観" loading="lazy"><span class="visual-label">外観</span></div>'+
-        '<div class="visual-sub-img"><img src="'+escUrl(ph.subPhoto2.url)+'" alt="'+esc(ph.subPhoto2.label)+'" loading="lazy"><span class="visual-label">'+esc(ph.subPhoto2.label)+'</span></div>'+
+        '<div class="visual-sub-img"><img src="'+escUrl(ph.gaikanPhoto)+'" alt="外観" loading="lazy"></div>'+
+        '<div class="visual-sub-img"><img src="'+escUrl(ph.subPhoto2.url)+'" alt="'+esc(ph.subPhoto2.label)+'" loading="lazy"></div>'+
       '</div></div></div>';
 
     var reason='<div id="reason-section"><div class="section">'+
@@ -279,8 +279,7 @@
       '<div class="madori-info"><div class="madori-spec">'+esc(p.madori||'―')+'　|　'+esc(p.menseki||'―')+'</div><div class="madori-desc">'+esc(madoriDesc)+'</div></div></div></div>';
 
     var slides=ph.otherPhotos.map(function(item){
-      return '<div class="slider-slide"><img src="'+escUrl(item.url)+'" alt="'+esc(item.label)+'" loading="lazy">'+
-        '<div class="slider-cap"><div class="slider-label">'+esc(item.label)+'</div></div></div>';
+      return '<div class="slider-slide"><img src="'+escUrl(item.url)+'" alt="'+esc(item.label)+'" loading="lazy"></div>';
     }).join('');
     var gallery='<div id="gallery-section" class="section-full fade-in"><div class="inner">'+
       '<div class="section-title">物件写真</div>'+
