@@ -384,13 +384,13 @@
 
     var cost='<div id="cost-section" class="section fade-in">'+
       '<div class="section-title">費用シミュレーション</div>'+
-      '<div class="cost-hero">'+
-        '<div class="cost-hero-label">月額合計（目安）</div>'+
-        '<div class="cost-hero-value"><span data-cu="'+total+'" data-sf="円">'+total.toLocaleString()+'円</span></div>'+
-      '</div>'+
       '<div class="cost-grid">'+
         '<div class="cost-card"><div class="cost-card-label">住宅ローン返済</div><div class="cost-card-value"><span data-cu="'+monthly+'" data-sf="円">'+monthly.toLocaleString()+'円</span></div></div>'+
         '<div class="cost-card"><div class="cost-card-label">管理費＋修繕積立金</div><div class="cost-card-value"><span data-cu="'+(kanri+shuz)+'" data-sf="円">'+(kanri+shuz).toLocaleString()+'円</span></div></div>'+
+      '</div>'+
+      '<div class="cost-hero">'+
+        '<div class="cost-hero-label">月額合計（目安）</div>'+
+        '<div class="cost-hero-value"><span data-cu="'+total+'" data-sf="円">'+total.toLocaleString()+'円</span></div>'+
       '</div>'+
       '<div class="chart-wrap">'+
         '<div class="chart-title">50年間の総支払額シミュレーション（金利0.93%・元利均等）</div>'+
