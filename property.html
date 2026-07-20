@@ -71,6 +71,7 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .hero-price-label{font-size:var(--fs-label);color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-bottom:8px;text-transform:uppercase;font-weight:500}
 .hero-price{font-size:clamp(44px,10vw,80px);font-weight:700;color:#fff;letter-spacing:0.02em;line-height:1}
 .hero-price-suffix{font-size:clamp(18px,2.5vw,28px);font-weight:500;margin-left:6px;opacity:0.85}
+.hero-tags{display:none!important}
 
 /* ===== セクション共通 ===== */
 .section{padding:64px 28px;max-width:840px;margin:0 auto}
@@ -421,6 +422,7 @@ function showError(){
 }
 
 function initAll(){
+  document.querySelectorAll('.hero-tags').forEach(function(el){el.remove();});
   initFadeIn();
   initSlider();
   initCostObserver();
