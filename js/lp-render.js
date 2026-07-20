@@ -296,23 +296,14 @@
       (mapAddr?'<div class="map-container"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(mapAddr)+'&output=embed&z=16&hl=ja" loading="lazy"></iframe></div>':'')+
       '</div>';
 
-    var specShortLabels=['販売価格','間取り','専有面積','バルコニー','築年月','管理費','修繕積立金'];
     var specRows=[
-      ['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
+      ['物件名', esc(p.name||'―')],['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
       ['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],['バルコニー', esc(p.balcony||'―')],
       ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
       ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
     ];
-    var specBody='', inShortGroup=false;
-    specRows.forEach(function(r){
-      var isShort=specShortLabels.indexOf(r[0])>=0;
-      if(isShort&&!inShortGroup){ specBody+='<tbody class="spec-short-group">'; inShortGroup=true; }
-      if(!isShort&&inShortGroup){ specBody+='</tbody>'; inShortGroup=false; }
-      specBody+='<tr class="spec-row-'+(isShort?'short':'long')+'"><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';
-    });
-    if(inShortGroup) specBody+='</tbody>';
     var spec='<div id="spec-section" class="section fade-in"><div class="section-title">物件概要</div>'+
-      '<table class="spec-table">'+specBody+'</table></div>';
+      '<table class="spec-table">'+specRows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('')+'</table></div>';
 
     var renoHero='';
     if(p.reno&&p.reno!=='―'){
