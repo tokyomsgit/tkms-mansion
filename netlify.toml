@@ -1,5 +1,10 @@
 [build]
+  publish = "."
   functions = "netlify/functions"
+
+[build.environment]
+  # Supabase anon key はクライアント公開用のためスキャン対象外
+  SECRETS_SCAN_OMIT_PATHS = "property.html,index.html,netlify/functions/lib/supabase.js,netlify/functions/read-maisoku-background.js"
 
 [functions]
   node_bundler = "esbuild"
