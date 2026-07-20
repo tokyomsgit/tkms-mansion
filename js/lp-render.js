@@ -73,10 +73,26 @@
       .replace(/(\d+)万円/g,function(_,n){ return parseInt(n,10).toLocaleString()+'万円'; });
   }
 
-  function formatPriceDisplay(price){
-    var n=parseInt(String(price||'').replace(/[^0-9]/g,''),10);
-    if(!n) return price||'―';
-    return n.toLocaleString()+'万円';
+  function parseMonthlyYen(s){
+    if(!s||s==='―'||s==='-') return 0;
+    s=sanitizeText(String(s));
+    if(!s) return 0;
+    var m=s.match(/月額\s*([\d,]+)\s*円/);
+    if(m) return clampMonthlyYen(parseInt(m[1].replace(/,/g,''),10));
+    m=s.match(/([\d,]+)\s*円\s*[／/]\s*月/);
+    if(m) return clampMonthlyYen(parseInt(m[1].replace(/,/g,''),10));
+    m=s.match(/([\d,]+)\s*円/);
+    if(m) return clampMonthlyYen(parseInt(m[1].replace(/,/g,''),10));
+    var digits=s.replace(/[^0-9]/g,'');
+    if(!digits) return 0;
+    return clampMonthlyYen(parseInt(digits,10));
+  }
+
+  function clampMonthlyYen(n){
+    n=parseInt(n,10);
+    if(!n||isNaN(n)||n<0) return 0;
+    if(n>500000) return 0;
+    return n;
   }
 
   function formatChikuTag(chiku){
@@ -230,28 +246,11 @@
     return cards;
   }
 
-  function buildEquipItems(p){
-    var items=[], seen={};
-    function add(list){
-      (list||[]).forEach(function(s){
-        s=sanitizeText(s);
-        if(!s||seen[s]||isGarbageText(s)||isListFragment(s)||s.length>48) return;
-        seen[s]=1;
-        items.push(s);
-      });
-    }
-    add(splitListText(p.reno));
-    add(splitListText(p.setubi));
-    if(!items.length) items=['詳細はお問い合わせください'];
-    return items.slice(0,24);
-  }
-
   function buildSections(p, photoUrls, madoriUrl, galleryPhotos, copy){
     copy=copy||{};
     var ph=pickPhotos(photoUrls, galleryPhotos);
     var reasons=buildReasonCards(p, copy);
     var accessLines=parseAccessLines(p.koutu);
-    var equip=buildEquipItems(p);
     var madoriDesc=copy.madori_desc||'';
     if(!madoriDesc&&p.madori&&p.menseki) madoriDesc=p.madori+'・'+p.menseki+'の間取りで、効率的な動線とゆとりある空間を実現。日常の暮らしに寄り添う使いやすいレイアウトです。';
 
@@ -311,7 +310,7 @@
       renoHero='<div class="reno-hero"><div class="reno-hero-text"><em>'+esc(p.name||'本物件')+'</em> — '+esc(renoText)+'</div></div>';
     }
     var reno='<div id="reno-section" class="section fade-in"><div class="section-title">リノベーション・設備仕様</div>'+
-      renoHero+'<div class="equip-list">'+equip.map(function(s){ return '<div class="equip-item">'+esc(s)+'</div>'; }).join('')+'</div></div>';
+      renoHero+'<div class="equip-note">詳細はお問い合わせください</div></div>';
 
     var areaBlocks=[];
     if(copy.area_blocks&&copy.area_blocks.length){
@@ -358,8 +357,8 @@
     var price=parseInt((p.price||'0').replace(/[^0-9]/g,''))*10000;
     var rate=0.0093/12, n=600;
     var monthly=price>0?Math.round(price*rate/(1-Math.pow(1+rate,-n))):0;
-    var kanri=parseInt((p.kanrihi||'0').replace(/[^0-9]/g,''));
-    var shuz=parseInt((p.shuzenhk||'0').replace(/[^0-9]/g,''));
+    var kanri=parseMonthlyYen(p.kanrihi);
+    var shuz=parseMonthlyYen(p.shuzenhk);
     var total=monthly+kanri+shuz;
     var totalPay=monthly*n;
     var interest=totalPay-price;
