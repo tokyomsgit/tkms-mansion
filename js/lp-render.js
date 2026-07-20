@@ -254,13 +254,13 @@
       '</div></div></div>';
 
     var reason='<div id="reason-section"><div class="section">'+
-      '<div class="section-eyebrow">Why Choose</div><div class="section-title">この物件を選ぶ理由</div>'+
+      '<div class="section-title">この物件を選ぶ理由</div>'+
       '<div class="reason-grid">'+reasons.map(function(c){
-        return '<div class="reason-card"><div class="reason-icon"><span class="reason-icon-badge">'+esc(c.badge)+'</span></div><div class="reason-label">'+esc(c.label)+'</div><div class="reason-title">'+esc(c.title)+'</div><div class="reason-desc">'+esc(c.desc)+'</div></div>';
+        return '<div class="reason-card"><div class="reason-title">'+esc(c.title)+'</div><div class="reason-desc">'+esc(c.desc)+'</div></div>';
       }).join('')+'</div></div></div>';
 
     var madori='<div id="madori-section" class="section fade-in">'+
-      '<div class="section-eyebrow">Floor Plan</div><div class="section-title">間取り図</div>'+
+      '<div class="section-title">間取り図</div>'+
       '<div class="madori-wrap"><div class="madori-img"><img src="'+escUrl(madoriUrl)+'" alt="間取り図" loading="lazy"></div>'+
       '<div class="madori-info"><div class="madori-spec">'+esc(p.madori||'―')+'　|　'+esc(p.menseki||'―')+'</div><div class="madori-desc">'+esc(madoriDesc)+'</div></div></div></div>';
 
@@ -269,7 +269,7 @@
         '<div class="slider-cap"><div class="slider-label">'+esc(item.label)+'</div></div></div>';
     }).join('');
     var gallery='<div id="gallery-section" class="section-full fade-in"><div class="inner">'+
-      '<div class="section-eyebrow">Gallery</div><div class="section-title">物件写真</div>'+
+      '<div class="section-title">物件写真</div>'+
       '<div class="slider-wrap"><div class="slider-track">'+slides+'</div>'+
       '<button class="slider-btn prev" type="button">←</button><button class="slider-btn next" type="button">→</button></div></div></div>';
 
@@ -282,7 +282,7 @@
     }).join('') : '<li><span class="access-dot"></span>'+esc(p.koutu||'―')+'</li>';
     var mapAddr=mapAddress(p);
     var access='<div id="access-section" class="section fade-in">'+
-      '<div class="section-eyebrow">Access</div><div class="section-title">交通アクセス</div>'+
+      '<div class="section-title">交通アクセス</div>'+
       '<div class="access-intro">'+esc(accessIntro)+'</div><ul class="access-list">'+accessList+'</ul>'+
       (mapAddr?'<div class="map-container"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(mapAddr)+'&output=embed&z=16&hl=ja" loading="lazy"></iframe></div>':'')+
       '</div>';
@@ -293,7 +293,7 @@
       ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
       ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
     ];
-    var spec='<div id="spec-section" class="section fade-in"><div class="section-eyebrow">Overview</div><div class="section-title">物件概要</div>'+
+    var spec='<div id="spec-section" class="section fade-in"><div class="section-title">物件概要</div>'+
       '<table class="spec-table">'+specRows.map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'; }).join('')+'</table></div>';
 
     var renoHero='';
@@ -301,7 +301,7 @@
       var renoText=copy.reno_intro||((p.name||'本物件')+'の魅力を最大限に活かした、快適な暮らしを叶える仕様です。');
       renoHero='<div class="reno-hero"><div class="reno-hero-text"><em>'+esc(p.name||'本物件')+'</em> — '+esc(renoText)+'</div></div>';
     }
-    var reno='<div id="reno-section" class="section fade-in"><div class="section-eyebrow">Renovation</div><div class="section-title">リノベーション・設備仕様</div>'+
+    var reno='<div id="reno-section" class="section fade-in"><div class="section-title">リノベーション・設備仕様</div>'+
       renoHero+'<div class="equip-list">'+equip.map(function(s){ return '<div class="equip-item">'+esc(s)+'</div>'; }).join('')+'</div></div>';
 
     var areaBlocks=[];
@@ -320,11 +320,11 @@
         ];
       }
     }
-    var area=areaBlocks.length?'<div id="area-section" class="section fade-in"><div class="section-eyebrow">Area</div><div class="section-title">エリア解説</div>'+
+    var area=areaBlocks.length?'<div id="area-section" class="section fade-in"><div class="section-title">エリア解説</div>'+
       areaBlocks.map(function(b){ return '<div class="area-block"><div class="area-block-title">'+esc(b.title||'エリア')+'</div><div class="area-text">'+esc(b.text)+'</div></div>'; }).join('')+'</div>':'';
 
     var neighbors=(p.neighbors&&p.neighbors.length)?p.neighbors:[];
-    var facility=neighbors.length?'<div id="facility-section" class="section fade-in"><div class="section-eyebrow">Facilities</div><div class="section-title">周辺施設</div><div class="facility-grid">'+
+    var facility=neighbors.length?'<div id="facility-section" class="section fade-in"><div class="section-title">周辺施設</div><div class="facility-grid">'+
       neighbors.slice(0,4).map(function(n){
         return '<div><div class="facility-cat">'+esc(n.cat||'')+'</div><ul class="facility-list">'+
           (n.items||[]).slice(0,5).map(function(it){ return '<li>'+esc(it)+'</li>'; }).join('')+'</ul></div>';
@@ -334,10 +334,10 @@
     if(!spots.length && neighbors.length){
       spots=neighbors.slice(0,3).map(function(n){ return {name:n.cat, desc:(n.items&&n.items[0])||''}; });
     }
-    var spot=spots.length?'<div id="spot-section" class="section fade-in"><div class="section-eyebrow">Highlights</div><div class="section-title">注目スポット</div>'+
+    var spot=spots.length?'<div id="spot-section" class="section fade-in"><div class="section-title">注目スポット</div>'+
       spots.slice(0,3).map(function(s){ return '<div class="spot-card"><div class="spot-name">'+esc(s.name||'')+'</div><div class="spot-desc">'+esc(s.desc||'')+'</div></div>'; }).join('')+'</div>':'';
 
-    var cta='<div id="cta-section"><div class="section"><div class="cta-eyebrow">Contact</div><div class="cta-title">内見のご予約・お問い合わせ</div>'+
+    var cta='<div id="cta-section"><div class="section"><div class="cta-title">内見のご予約・お問い合わせ</div>'+
       '<div class="cta-sub">ご内見・ご質問など、お気軽にお問い合わせください。</div>'+
       '<a class="cta-btn" href="tel:0337897777"><span class="cta-btn-label">お電話でお問い合わせ</span><span class="cta-btn-tel">03-3789-7777</span><span class="cta-btn-sub">受付時間 10:00〜18:00</span></a>'+
       '<div class="cta-note">お気軽にお電話ください</div></div></div>';
@@ -364,7 +364,6 @@
 
     var hero='<div class="hero fade-in"'+heroBg+'>'+
       '<div class="hero-inner">'+
-      '<div class="hero-eyebrow">Property Document</div>'+
       '<div class="hero-company">東京マンション株式会社</div>'+
       '<div class="hero-name">'+esc(p.name||'')+'</div>'+
       '<div class="hero-room">'+esc(p.madori||'')+'<span class="hero-sep">|</span>'+esc(p.menseki||'')+'</div>'+
@@ -375,7 +374,6 @@
       '</div></div>';
 
     var cost='<div id="cost-section" class="section fade-in">'+
-      '<div class="section-eyebrow">Simulation</div>'+
       '<div class="section-title">費用シミュレーション</div>'+
       '<div class="cost-hero">'+
         '<div class="cost-hero-label">月額合計（目安）</div>'+
@@ -395,7 +393,6 @@
 
     var footer='<footer class="footer">'+
       '<div class="footer-company">東京マンション株式会社</div>'+
-      '<div class="footer-sub">Tokyo Mansion Co., Ltd.</div>'+
       '<div class="footer-note">本資料に記載の情報は参考ページ・公開情報に基づく概算であり、実際の内容は重要事項説明書にてご確認ください。管理費・修繕積立金等は変更となる場合がございます。</div>'+
     '</footer>';
 
