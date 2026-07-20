@@ -63,14 +63,14 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .hero-inner{width:100%;max-width:880px;margin:0 auto;padding:44px 28px 36px;position:relative;z-index:1}
 .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(22,34,33,0.15),transparent 40%);pointer-events:none}
 .hero-eyebrow,.section-eyebrow,.cta-eyebrow,.reason-icon,.reason-label{display:none!important}
-.hero-company{font-size:var(--fs-hero-company);color:rgba(255,255,255,0.55);letter-spacing:0.1em;margin-bottom:10px}
+.hero-company{font-size:var(--fs-hero-company);color:#fff;letter-spacing:0.1em;margin-bottom:10px}
 .hero-name{font-size:calc(var(--fs-hero-name) - 2px);font-weight:700;letter-spacing:0.04em;line-height:1.25;margin-bottom:6px;text-shadow:0 2px 24px rgba(0,0,0,0.25)}
 .hero-room{font-size:calc(var(--fs-hero-name) - 2px);color:#fff;letter-spacing:0.04em;font-weight:500;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.hero-sep{opacity:0.4;font-weight:400}
+.hero-sep{color:#fff;opacity:1;font-weight:400}
 .hero-price-wrap{margin-bottom:0;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12)}
-.hero-price-label{font-size:var(--fs-label);color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-bottom:4px;text-transform:uppercase;font-weight:500}
+.hero-price-label{font-size:var(--fs-label);color:#fff;letter-spacing:0.12em;margin-bottom:4px;text-transform:uppercase;font-weight:500}
 .hero-price{font-size:var(--fs-hero-name);font-weight:700;color:#fff;letter-spacing:0.02em;line-height:1.25}
-.hero-price-suffix{font-size:0.55em;font-weight:500;margin-left:6px;opacity:0.85}
+.hero-price-suffix{font-size:0.55em;font-weight:500;margin-left:6px;color:#fff;opacity:1}
 .hero-tags{display:none!important}
 
 /* ===== セクション共通 ===== */
@@ -292,14 +292,14 @@ img,video,iframe{max-width:100%}
   .equip-item{padding:14px 16px}
   .equip-item:nth-child(odd){border-right:none}
 
-  .spec-table{display:block;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:none;padding:6px 0}
+  .spec-table{display:block;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;box-shadow:none;padding:5px 0}
   .spec-table tbody{display:block}
   .spec-table tr{display:block;border:none;margin:0;border-radius:0;box-shadow:none;background:transparent}
   .spec-table td{display:block;width:100%!important;padding:0;white-space:normal;line-height:1.6}
-  .spec-table td:first-child{background:transparent;border:none;padding:10px 16px 2px;font-weight:600;color:var(--gray);letter-spacing:0.02em;font-size:calc(var(--fs-sm) + 1px)}
-  .spec-table td:last-child{padding:0 16px 10px;color:var(--dark);font-size:calc(var(--fs-body) + 1px)}
-  .spec-table tr:first-child td:first-child{padding-top:12px}
-  .spec-table tr:last-child td:last-child{padding-bottom:12px}
+  .spec-table td:first-child{background:transparent;border:none;padding:9px 16px 1px;font-weight:600;color:var(--gray);letter-spacing:0.02em;font-size:calc(var(--fs-sm) + 1px)}
+  .spec-table td:last-child{padding:0 16px 9px;color:var(--dark);font-size:calc(var(--fs-body) + 1px)}
+  .spec-table tr:first-child td:first-child{padding-top:11px}
+  .spec-table tr:last-child td:last-child{padding-bottom:11px}
 
   .cost-hero{padding:28px 18px;border-radius:12px}
   .cost-hero-label{letter-spacing:0.08em}
