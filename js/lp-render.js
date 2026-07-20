@@ -298,10 +298,10 @@
 
     var specShortLabels=['販売価格','間取り','専有面積','バルコニー','築年月','管理費','修繕積立金'];
     var specRows=[
-      ['所在地', esc(p.address||'―')],['構造・階数', esc(p.kozo||'―')],['駐車場', esc(p.parking||'―')],
-      ['販売価格', esc(formatPriceDisplay(p.price))],['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],
-      ['バルコニー', esc(p.balcony||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
-      ['修繕積立金', esc(p.shuzenhk||'―')]
+      ['所在地', esc(p.address||'―')],['販売価格', esc(formatPriceDisplay(p.price))],
+      ['間取り', esc(p.madori||'―')],['専有面積', esc(p.menseki||'―')],['バルコニー', esc(p.balcony||'―')],
+      ['構造・階数', esc(p.kozo||'―')],['築年月', esc(p.chiku||'―')],['管理費', esc(p.kanrihi||'―')],
+      ['修繕積立金', esc(p.shuzenhk||'―')],['駐車場', esc(p.parking||'―')]
     ];
     var specBody='', inShortGroup=false;
     specRows.forEach(function(r){
