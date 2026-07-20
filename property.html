@@ -26,7 +26,7 @@
   --fs-label:15px;
   --fs-hero-eyebrow:17px;
   --fs-hero-company:17px;
-  --fs-hero-room:29px;
+  --fs-hero-name:clamp(30px,5.5vw,50px);
   --fs-section-eyebrow:15px;
   --fs-section-title:clamp(24px,3vw,30px);
   --fs-reason-title:20px;
@@ -64,8 +64,8 @@ body{background:#faf9f6;font-family:'Noto Sans JP','Hiragino Sans','Yu Gothic UI
 .hero::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(22,34,33,0.15),transparent 40%);pointer-events:none}
 .hero-eyebrow{font-size:var(--fs-hero-eyebrow);font-weight:500;color:var(--green);letter-spacing:0.2em;margin-bottom:8px;text-transform:uppercase}
 .hero-company{font-size:var(--fs-hero-company);color:rgba(255,255,255,0.55);letter-spacing:0.1em;margin-bottom:24px}
-.hero-name{font-size:clamp(30px,5.5vw,50px);font-weight:700;letter-spacing:0.04em;line-height:1.25;margin-bottom:12px;text-shadow:0 2px 24px rgba(0,0,0,0.25)}
-.hero-room{font-size:var(--fs-hero-room);color:rgba(126,184,160,0.95);letter-spacing:0.08em;font-weight:500;margin-bottom:36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hero-name{font-size:var(--fs-hero-name);font-weight:700;letter-spacing:0.04em;line-height:1.25;margin-bottom:12px;text-shadow:0 2px 24px rgba(0,0,0,0.25)}
+.hero-room{font-size:var(--fs-hero-name);color:rgba(126,184,160,0.95);letter-spacing:0.04em;font-weight:500;margin-bottom:36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .hero-sep{opacity:0.4;font-weight:400}
 .hero-price-wrap{margin-bottom:32px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.12)}
 .hero-price-label{font-size:var(--fs-label);color:rgba(255,255,255,0.45);letter-spacing:0.12em;margin-bottom:8px;text-transform:uppercase;font-weight:500}
@@ -232,7 +232,7 @@ img,video,iframe{max-width:100%}
     --fs-label:17px;
     --fs-hero-eyebrow:19px;
     --fs-hero-company:18px;
-    --fs-hero-room:29px;
+    --fs-hero-name:clamp(30px,8vw,38px);
     --fs-section-eyebrow:17px;
     --fs-section-title:27px;
     --fs-reason-title:22px;
@@ -250,8 +250,8 @@ img,video,iframe{max-width:100%}
   .hero-inner{padding:44px 16px 36px}
   .hero-eyebrow{letter-spacing:0.12em;margin-bottom:6px}
   .hero-company{margin-bottom:14px;letter-spacing:0.06em}
-  .hero-name{font-size:clamp(30px,8vw,38px);letter-spacing:0.02em;line-height:1.3}
-  .hero-room{margin-bottom:22px;letter-spacing:0.04em;gap:10px;font-weight:500}
+  .hero-name{letter-spacing:0.02em;line-height:1.3}
+  .hero-room{margin-bottom:22px;letter-spacing:0.02em;gap:10px;font-weight:500}
   .hero-price-wrap{margin-bottom:22px;padding-top:16px}
   .hero-price-label{letter-spacing:0.08em;margin-bottom:6px}
   .hero-price{font-size:clamp(54px,14vw,72px)}
